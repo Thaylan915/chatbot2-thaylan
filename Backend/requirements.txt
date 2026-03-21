@@ -1,7 +1,8 @@
-# Core dependencies
-openai>=1.0.0
-faiss-cpu>=1.7.4
-numpy>=1.24.0
-
-# Testing
-pytest>=7.4.0
+django>=4.2
+djangorestframework>=3.15
+djangorestframework-simplejwt>=5.3
+django-cors-headers>=4.3
+google-generativeai>=0.7
+psycopg2-binary>=2.9
+python-dotenv>=1.0
+pypdf>=4.0
