@@ -2,14 +2,19 @@ import Header from "../components/Header";
 import "./Styles.css";
 import { Link } from "react-router-dom";
 
-export default function Login() {
+export default function Cadastro() {
   return (
     <div className="pagina">
       <Header />
 
       <div className="conteudo">
         <div className="card">
-          <h2>Login</h2>
+          <h2>Cadastro</h2>
+
+          <label>
+            <span>Nome</span>
+            <input type="text" placeholder="Digite seu nome" />
+          </label>
 
           <label>
             <span>E-mail</span>
@@ -21,9 +26,14 @@ export default function Login() {
             <input type="password" placeholder="Digite sua senha" />
           </label>
 
-          <Link to="/cadastro">Cadastrar-se</Link>
+          <label>
+            <span>Confirmar Senha</span>
+            <input type="password" placeholder="Confirme sua senha" />
+          </label>
 
-          <button className="btnEntrar">Entrar</button>
+          <button className="btnEntrar">Cadastrar</button>
+
+          <Link to="/">Voltar para login</Link>
         </div>
       </div>
     </div>

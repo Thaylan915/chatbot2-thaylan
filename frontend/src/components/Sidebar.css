@@ -1,0 +1,131 @@
+.sidebar {
+  width: 350px;
+  height: 100vh;
+  background-color: #222831;
+  display: flex;
+  flex-direction: column;
+  padding: 10px;
+  box-sizing: border-box;
+  color: #00adb5;
+  font-family: "Poppins", sans-serif;
+}
+
+img {
+  width: 28px;
+  height: 28px;
+  filter: invert(1);
+
+  /* verificar quais não estao no tamanho certo e trocar */
+  /* border: 1px solid red;  */
+}
+
+.item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px;
+  border-radius: 8px;
+}
+
+.item.menu:hover {
+  background-color: #393e46;
+  cursor: pointer;
+}
+
+.item.header {
+  justify-content: space-between;
+  align-items: center;
+  font-weight: bold;
+  font-size: 20px;
+  height: 50px;
+  margin-bottom: 15px;
+  padding: 0 10px;
+}
+
+.esquerda {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+}
+
+.direita img:hover {
+  cursor: pointer;
+}
+
+.menu {
+  font-size: 20px;
+  color: #00adb5;
+}
+
+.miniTitulo {
+  padding: 20px 10px 8px;
+  font-size: 14px;
+  opacity: 40%;
+}
+
+.chats {
+  flex: 1;
+  overflow-y: auto;
+  color: #eeeeee;
+}
+
+.chatItem {
+  padding: 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.chatItem:hover {
+  background-color: #393e46;
+}
+
+.perfil {
+  margin-top: auto;
+  padding: 10px;
+  border-top: 1px solid #2a2b32;
+}
+
+.perfilInfo:hover {
+  background-color: #393e46;
+  border-radius: 8px;
+}
+
+.perfilInfo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  padding: 5px;
+}
+
+.avatar {
+  width: 35px;
+  height: 35px;
+  background-color: #00adb5;
+  color: #eeeeee;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+}
+
+.nome {
+  font-size: 18px;
+}
+
+@media (max-width: 768px) {
+  .sidebar {
+    width: 200px;
+  }
+
+  .item.header {
+    font-size: 16px;
+  }
+
+  .menu {
+    font-size: 14px;
+  }
+}

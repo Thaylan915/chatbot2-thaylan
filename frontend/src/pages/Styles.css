@@ -1,0 +1,167 @@
+/* FUNDO */
+.pagina {
+  min-height: 100vh;
+  background: linear-gradient(to bottom, #222831 55%, #393e46 45%);
+  display: flex;
+  flex-direction: column;
+}
+
+/* HEADER */
+.header {
+  position: relative;
+  height: 40vh;
+}
+
+/* TÍTULO CENTRALIZADO PERFEITO */
+.titulo {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+}
+
+.titulo h1 {
+  margin: 0;
+  font-size: 90px;
+  color: #00adb5;
+}
+
+.titulo p {
+  margin-top: 5px;
+  font-size: 50px;
+  color: #00adb5;
+  padding: 5px;
+  line-height: 1.1;
+}
+
+/* BOTÃO ADMIN (CANTO SUPERIOR DIREITO) */
+.entrarAdm {
+  position: absolute;
+  top: 20px;
+  right: 40px;
+}
+
+.btnAdm {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 25px;
+  background-color: #00adb5;
+  color: black;
+  font-weight: bold;
+  font-size: 14px;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+.btnAdm:hover {
+  background-color: #009da5;
+}
+
+/* CONTEÚDO */
+.conteudo {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding-top: 10px;
+}
+
+/* CARD LOGIN */
+.card {
+  width: 350px;
+  padding: 30px;
+  background: #222831;
+  border-radius: 15px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.card h2 {
+  color: #eeeeee;
+  text-align: center;
+  margin: 0;
+}
+
+.card label {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  color: #eeeeee;
+}
+
+/* INPUTS */
+.card input {
+  width: 100%;
+  padding: 10px;
+  border-radius: 8px;
+  border: 1px solid #eeeeee;
+  margin-top: 5px;
+  box-sizing: border-box;
+}
+
+/* LINK */
+.card a {
+  font-size: 14px;
+  width: fit-content;
+  color: #eeeeee;
+  text-decoration: none;
+}
+
+.card a:hover {
+  text-decoration: underline;
+}
+
+/* BOTÃO ENTRAR */
+.btnEntrar {
+  margin-top: 10px;
+  padding: 12px;
+  border: none;
+  border-radius: 10px;
+  background-color: #00adb5;
+  color: white;
+  font-size: 16px;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+.btnEntrar:hover {
+  background-color: #009da5;
+}
+
+@media (max-width: 960px) {
+  /* tira o posicionamento absoluto */
+  .entrarAdm {
+    position: static;
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    margin-top: 20px;
+  }
+
+  /* botão ocupa mais espaço */
+  .btnAdm {
+    width: 80%;
+  }
+
+  /* empurra o botão pra baixo do card */
+  .conteudo {
+    flex-direction: column;
+    align-items: center;
+    padding-bottom: 20px;
+  }
+
+  /* ordem dos elementos (card primeiro, botão depois) */
+  .header {
+    height: auto;
+    padding-bottom: 30px;
+  }
+
+  .titulo {
+    position: static;
+    transform: none;
+    margin-top: 10px;
+  }
+}

@@ -1,0 +1,222 @@
+.conhecArea {
+  flex: 1;
+  height: 100vh;
+  background-color: #393e46;
+  color: white;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+}
+
+.topo {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: #222831;
+}
+
+.topo h2 {
+  margin-left: 60px;
+  font-size: 40px;
+}
+
+.btnAdd {
+  background-color: #393e46;
+  color: #eeeeee;
+  border: none;
+  border-radius: 22px;
+  cursor: pointer;
+  font-weight: bold;
+  margin-right: 60px;
+  font-size: 30px;
+  padding: 10px;
+}
+
+.btnAdd:hover {
+  background-color: #eeeeee;
+  color: #222831;
+}
+
+.dadosDoc {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  padding-top: 30px;
+
+  height: 20vh;
+}
+
+.cardDados {
+  height: 15vh;
+  width: 325px;
+  background-color: #222831;
+  border-radius: 22px;
+
+  display: flex;
+  flex-direction: column;
+  justify-content: space-around;
+  padding-left: 20px;
+
+  color: #eeeeee;
+}
+
+.areaDocumentos {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 0 60px 0 60px;
+}
+
+.listaDocumentos {
+  flex: 1;
+  overflow-y: auto;
+  border-top-right-radius: 22px;
+  border-top-left-radius: 22px;
+  background-color: #222831;
+}
+
+.headerDoc {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #393e46;
+  padding: 0 20px 0 20px;
+}
+
+.headerDoc h2 {
+  font-size: 22px;
+}
+
+.btnReindexar {
+  background-color: #393e46;
+  border: none;
+  border-radius: 20px;
+  cursor: pointer;
+  color: #eeeeee;
+  font-weight: bold;
+  font-size: 24px;
+  padding: 10px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+.btnReindexar img {
+  filter: invert(1);
+}
+
+.btnReindexar:hover {
+  background-color: #eeeeee;
+  color: #222831;
+}
+.btnReindexar:hover img {
+  filter: invert(0);
+}
+
+/* MODAL */
+.overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+
+  backdrop-filter: blur(6px);
+  background-color: rgba(0, 0, 0, 0.4);
+
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+  z-index: 999;
+}
+
+/* CAIXA DO MODAL */
+.modal {
+  width: 500px;
+  max-width: 90%;
+  background-color: #222831;
+  border-radius: 16px;
+  padding: 25px;
+
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
+  color: #eeeeee;
+}
+
+/* TÍTULO */
+.modal h2 {
+  margin: 0;
+  text-align: center;
+}
+
+/* INPUTS */
+.modal label {
+  display: flex;
+  flex-direction: column;
+  font-size: 14px;
+  gap: 5px;
+}
+
+.modal input,
+.modal textarea {
+  padding: 10px;
+  border-radius: 8px;
+  border: none;
+  outline: none;
+
+  /*  
+  background-color: #eeeeee;
+  color: #393e46;
+  */
+
+  background-color: #393e46;
+  color: white;
+}
+
+.modal textarea {
+  min-height: 100px;
+  resize: none;
+}
+
+/* BOTÕES */
+.modalActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.btnVoltar {
+  background-color: transparent;
+  border: 1px solid #eeeeee;
+  color: #eeeeee;
+  padding: 8px 15px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.btnVoltar:hover {
+  background-color: #393e46;
+}
+
+.btnSalvar {
+  background-color: #00adb5;
+  border: none;
+  color: #222831;
+  padding: 8px 15px;
+  border-radius: 8px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.btnSalvar:hover {
+  background-color: #009da5;
+}
