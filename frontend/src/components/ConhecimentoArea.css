@@ -248,6 +248,27 @@
   background-color: #009da5;
 }
 
+.btnExcluirConfirmar {
+  background-color: #c0392b;
+  border: none;
+  color: #eeeeee;
+  padding: 8px 15px;
+  border-radius: 8px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.btnExcluirConfirmar:hover {
+  background-color: #a93226;
+}
+
+.modalConfirmacao p {
+  color: #cccccc;
+  font-size: 15px;
+  line-height: 1.5;
+  margin-bottom: 10px;
+}
+
 @media (max-width: 768px) {
   .topo {
     flex-direction: column;

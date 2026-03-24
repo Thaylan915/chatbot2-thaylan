@@ -488,8 +488,98 @@ Recebe uma pergunta e retorna a resposta do chatbot.
 
 ---
 
-### `DELETE /api/documents/<id>/`
-Exclui um documento e todos os seus chunks. Requer autenticação JWT de administrador.
+### `GET /api/documents/`
+Lista os arquivos enviados à API do Gemini. Requer autenticação JWT de administrador.
+
+```http
+GET http://127.0.0.1:8000/api/documents/
+Authorization: Bearer SEU_ACCESS_TOKEN
+```
+
+```json
+// Response 200
+{
+  "documentos": [
+    {
+      "name": "files/abc123",
+      "display_name": "Portaria_001",
+      "mime_type": "application/pdf",
+      "size_bytes": 204800,
+      "state": "ACTIVE",
+      "create_time": "2026-03-23T10:00:00+00:00",
+      "expiration_time": "2026-03-25T10:00:00+00:00",
+      "uri": "https://generativelanguage.googleapis.com/v1beta/files/abc123"
+    }
+  ]
+}
+```
+
+Erros: `401` sem token ou sem `is_staff` · `500` GEMINI_API_KEY não configurada.
+
+---
+
+### `POST /api/documents/`
+Cadastra um novo documento: faz upload para o Gemini e salva o registro no banco. Requer autenticação JWT de administrador.
+
+```http
+POST http://127.0.0.1:8000/api/documents/
+Authorization: Bearer SEU_ACCESS_TOKEN
+Content-Type: multipart/form-data
+```
+
+| Campo | Tipo | Obrigatório | Descrição |
+|---|---|---|---|
+| `nome` | string | sim | Nome do documento |
+| `tipo` | string | sim | `portaria`, `resolucao` ou `rod` |
+| `arquivo` | file | sim | Arquivo PDF a ser enviado |
+
+```json
+// Response 201
+{
+  "id": 1,
+  "nome": "Portaria_001",
+  "tipo": "portaria",
+  "caminho_arquivo": "https://generativelanguage.googleapis.com/v1beta/files/abc123",
+  "indexado_em": "2026-03-23T10:00:00+00:00"
+}
+```
+
+Erros: `400` campo faltando ou tipo inválido · `401` sem token ou sem `is_staff` · `500` GEMINI_API_KEY não configurada.
+
+---
+
+### `PATCH /api/documents/<id>/`
+Atualiza parcialmente um documento. Todos os campos são opcionais. Se um novo arquivo for enviado, o arquivo antigo é removido do Gemini e substituído. Requer autenticação JWT de administrador.
+
+```http
+PATCH http://127.0.0.1:8000/api/documents/1/
+Authorization: Bearer SEU_ACCESS_TOKEN
+Content-Type: multipart/form-data
+```
+
+| Campo | Tipo | Obrigatório | Descrição |
+|---|---|---|---|
+| `nome` | string | não | Novo nome do documento |
+| `tipo` | string | não | `portaria`, `resolucao` ou `rod` |
+| `arquivo` | file | não | Novo arquivo (substitui o atual no Gemini) |
+
+```json
+// Response 200
+{
+  "id": 1,
+  "nome": "Portaria_Atualizada",
+  "tipo": "resolucao",
+  "caminho_arquivo": "https://generativelanguage.googleapis.com/v1beta/files/xyz789",
+  "atualizado_em": "2026-03-23T11:30:00+00:00"
+}
+```
+
+Erros: `400` nenhum campo fornecido ou tipo inválido · `401` sem token ou sem `is_staff` · `404` ID não encontrado.
+
+---
+
+### `DELETE /api/documents/<id>/` — Passo 1: Solicitar exclusão
+Inicia o fluxo de exclusão com confirmação. Retorna um token válido por **5 minutos** que deve ser enviado no passo 2. Requer autenticação JWT de administrador.
 
 ```http
 DELETE http://127.0.0.1:8000/api/documents/1/
@@ -499,12 +589,40 @@ Authorization: Bearer SEU_ACCESS_TOKEN
 ```json
 // Response 200
 {
-  "message": "Documento 'PORTARIA Nº 1 - 2025...' excluído com sucesso.",
+  "mensagem": "Para confirmar a exclusão de 'Portaria_001', envie o token no campo 'token' via POST para /confirm/.",
+  "documento": {
+    "id": 1,
+    "nome": "Portaria_001",
+    "tipo": "portaria"
+  },
+  "token": "f47ac10b-58cc-4372-a567-0e02b2c3d479",
+  "expira_em": "2026-03-23T11:35:00+00:00"
+}
+```
+
+---
+
+### `POST /api/documents/<id>/confirm/` — Passo 2: Confirmar exclusão
+Confirma e executa a exclusão do documento usando o token recebido no passo anterior. O token é de uso único e expira em 5 minutos. Requer autenticação JWT de administrador.
+
+```http
+POST http://127.0.0.1:8000/api/documents/1/confirm/
+Authorization: Bearer SEU_ACCESS_TOKEN
+Content-Type: application/json
+```
+
+```json
+// Request
+{ "token": "f47ac10b-58cc-4372-a567-0e02b2c3d479" }
+
+// Response 200
+{
+  "message": "Documento 'Portaria_001' excluído com sucesso.",
   "id": 1
 }
 ```
 
-Erros: `401` sem token ou sem `is_staff` · `404` ID não encontrado · `400` ID inválido.
+Erros: `400` ID ou token inválido · `401` sem token ou sem `is_staff` · `403` token expirado ou incorreto · `404` ID não encontrado.
 
 ---
 
@@ -551,13 +669,78 @@ Authorization: Bearer SEU_TOKEN
 { "question": "oi" }
 ```
 
-### Excluir um documento
+### Listar documentos do Gemini
+
+| Campo | Valor |
+|---|---|
+| Método | `GET` |
+| URL | `http://127.0.0.1:8000/api/documents/` |
+| Headers | `Authorization: Bearer SEU_TOKEN` |
+
+---
+
+### Cadastrar um documento
+
+| Campo | Valor |
+|---|---|
+| Método | `POST` |
+| URL | `http://127.0.0.1:8000/api/documents/` |
+| Headers | `Authorization: Bearer SEU_TOKEN` |
+| Body | `form-data` |
+
+Campos no form-data:
+
+| Chave | Tipo | Valor de exemplo |
+|---|---|---|
+| `nome` | Text | `Portaria_001` |
+| `tipo` | Text | `portaria` |
+| `arquivo` | File | *(selecione o arquivo PDF)* |
+
+---
+
+### Editar um documento
+
+| Campo | Valor |
+|---|---|
+| Método | `PATCH` |
+| URL | `http://127.0.0.1:8000/api/documents/1/` |
+| Headers | `Authorization: Bearer SEU_TOKEN` |
+| Body | `form-data` |
+
+Envie apenas os campos que deseja alterar. Exemplo atualizando só o nome:
+
+| Chave | Tipo | Valor |
+|---|---|---|
+| `nome` | Text | `Portaria_Atualizada` |
+
+---
+
+### Excluir um documento (com confirmação)
+
+**Passo 1 — Solicitar exclusão:**
 
 | Campo | Valor |
 |---|---|
 | Método | `DELETE` |
 | URL | `http://127.0.0.1:8000/api/documents/1/` |
 | Headers | `Authorization: Bearer SEU_TOKEN` |
+
+Copie o campo `token` da resposta.
+
+**Passo 2 — Confirmar exclusão:**
+
+| Campo | Valor |
+|---|---|
+| Método | `POST` |
+| URL | `http://127.0.0.1:8000/api/documents/1/confirm/` |
+| Headers | `Authorization: Bearer SEU_TOKEN` · `Content-Type: application/json` |
+| Body | `raw → JSON` |
+
+```json
+{ "token": "f47ac10b-58cc-4372-a567-0e02b2c3d479" }
+```
+
+> O token expira em **5 minutos** e só pode ser usado uma vez.
 
 ---
 
@@ -658,7 +841,10 @@ python manage.py createsuperuser
 
 ## Próximos Passos
 
-- [ ] Testar endpoint `DELETE /api/documents/<id>/` no Postman
+- [x] Endpoint `GET /api/documents/` — listar documentos via Gemini Files API
+- [x] Endpoint `POST /api/documents/` — cadastrar documento com upload para o Gemini
+- [x] Endpoint `PATCH /api/documents/<id>/` — editar documento (nome, tipo e/ou arquivo)
+- [x] Exclusão com confirmação em dois passos via token com TTL de 5 minutos
 - [ ] Implementar Strategy Pattern — `infrastructure/llm/gemini_provider.py`
 - [ ] Implementar Facade Pattern — `application/answer_question.py` (fluxo RAG completo)
 - [ ] Gerar embeddings via Gemini e popular a coluna `embedding_vector`
