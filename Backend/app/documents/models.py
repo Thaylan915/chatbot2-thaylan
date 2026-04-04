@@ -104,3 +104,32 @@ class Profile(models.Model):
 
     def __str__(self):
         return f"{self.user.username} ({self.role})"
+class Conversa(models.Model):
+    """Representa uma sessão de chat entre um usuário e o chatbot."""
+    user       = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
+    iniciada_em = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        app_label = "documents"
+        ordering  = ["-iniciada_em"]
+
+    def __str__(self):
+        return f"Conversa #{self.id} — {self.user}"
+class Mensagem(models.Model):
+    ROLES = [
+        ("user",      "Usuário"),
+        ("assistant", "Assistente"),
+    ]
+
+    conversa             = models.ForeignKey(Conversa, on_delete=models.CASCADE, related_name="mensagens")
+    role                 = models.CharField(max_length=20, choices=ROLES)
+    conteudo_original    = models.TextField()           # pergunta como o usuário digitou (#36)
+    conteudo_processado  = models.TextField(blank=True) # pergunta após pré-processamento (#37)
+    criada_em            = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        app_label = "documents"
+        ordering  = ["criada_em"]
+
+    def __str__(self):
+        return f"[{self.role}] Conversa #{self.conversa_id}"   
