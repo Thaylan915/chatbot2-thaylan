@@ -1,7 +1,7 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-from rest_framework.permissions import IsAuthenticated, IsAdminUser
+from rest_framework.permissions import IsAuthenticated, IsAdminUser, AllowAny
 from django.contrib.auth.models import User
 from Backend.app.application.manage_profile import (
     list_users_with_profiles,
@@ -9,6 +9,42 @@ from Backend.app.application.manage_profile import (
     get_or_create_profile,
 )
 from Backend.app.application.log_action import log_action
+
+
+class UserRegisterView(APIView):
+    """
+    POST /api/users/register/  → cria um novo usuário.
+    Não requer autenticação.
+    """
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        username = request.data.get("username", "").strip()
+        email    = request.data.get("email", "").strip()
+        password = request.data.get("password", "")
+        password2 = request.data.get("password2", "")
+
+        if not username:
+            return Response({"error": "O campo 'username' é obrigatório."}, status=status.HTTP_400_BAD_REQUEST)
+        if not email:
+            return Response({"error": "O campo 'email' é obrigatório."}, status=status.HTTP_400_BAD_REQUEST)
+        if not password:
+            return Response({"error": "O campo 'password' é obrigatório."}, status=status.HTTP_400_BAD_REQUEST)
+        if password != password2:
+            return Response({"error": "As senhas não coincidem."}, status=status.HTTP_400_BAD_REQUEST)
+        if User.objects.filter(username=username).exists():
+            return Response({"error": "Nome de usuário já está em uso."}, status=status.HTTP_400_BAD_REQUEST)
+        if User.objects.filter(email=email).exists():
+            return Response({"error": "E-mail já cadastrado."}, status=status.HTTP_400_BAD_REQUEST)
+
+        user = User.objects.create_user(username=username, email=email, password=password)
+        get_or_create_profile(user)
+
+        return Response({
+            "id":       user.id,
+            "username": user.username,
+            "email":    user.email,
+        }, status=status.HTTP_201_CREATED)
 
 
 class UserListView(APIView):

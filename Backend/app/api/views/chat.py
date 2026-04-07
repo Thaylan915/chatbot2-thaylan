@@ -1,6 +1,7 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
+from rest_framework.permissions import AllowAny
 
 from Backend.app.application.answer_question import (
     iniciar_conversa,
@@ -16,6 +17,7 @@ class ChatIniciarView(APIView):
     POST /api/chat/iniciar/
     Cria uma nova conversa e retorna o id da sessão. #34
     """
+    permission_classes = [AllowAny]
 
     def post(self, request):
         user = request.user if request.user.is_authenticated else None
@@ -33,13 +35,8 @@ class ChatPerguntaView(APIView):
     """
     POST /api/chat/pergunta/
     Recebe uma pergunta, registra original e processada, retorna resposta. #35 #36 #37
-
-    Body JSON:
-        {
-            "conversa_id": 1,
-            "question": "O que é uma portaria?"
-        }
     """
+    permission_classes = [AllowAny]
 
     def post(self, request):
         conversa_id = request.data.get("conversa_id")

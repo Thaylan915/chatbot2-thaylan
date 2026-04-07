@@ -1,21 +1,33 @@
+import { useEffect, useState } from "react";
 import "./Sidebar.css";
-import logo       from "../assets/images/logo_chatbot.svg";
+import logo        from "../assets/images/logo_chatbot.svg";
 import hideSidebar from "../assets/images/hide-sidebar.svg";
-import novoChat   from "../assets/images/novo_chat.svg";
-import historico  from "../assets/images/historico.svg";
+import novoChat    from "../assets/images/novo_chat.svg";
+import historico   from "../assets/images/historico.svg";
 import basedeconhec from "../assets/images/basedeconhecimento.svg";
-import metricas   from "../assets/images/metricas.svg";
+import metricas    from "../assets/images/metricas.svg";
 
 import { useNavigate } from "react-router-dom";
 import { authService } from "../services/authService";
+import api from "../services/api";
 
 export default function Sidebar({ tipo }) {
   const navigate = useNavigate();
+  const [usuario, setUsuario] = useState(null);
+
+  useEffect(() => {
+    api.get("/api/users/me/")
+      .then((res) => setUsuario(res.data))
+      .catch(() => setUsuario(null));
+  }, []);
 
   function handleLogout() {
     authService.logout();
     navigate("/");
   }
+
+  const nomeExibido = usuario?.username || "...";
+  const inicial = nomeExibido[0]?.toUpperCase() || "?";
 
   return (
     <div className="sidebar">
@@ -66,8 +78,8 @@ export default function Sidebar({ tipo }) {
 
       <div className="perfil">
         <div className="perfilInfo">
-          <div className="avatar">K</div>
-          <div className="nome">Kenzo Annichini de Oliveira</div>
+          <div className="avatar">{inicial}</div>
+          <div className="nome">{nomeExibido}</div>
         </div>
         <button onClick={handleLogout} className="btnLogout">
           Sair

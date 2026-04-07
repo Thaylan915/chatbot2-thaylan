@@ -13,7 +13,44 @@ class DocumentListView(APIView):
     def get(self, request):
         try:
             documentos = DocumentFactory.make_list().executar()
-            return Response(documentos, status=status.HTTP_200_OK)
+            return Response({"documentos": documentos}, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    def post(self, request):
+        arquivo = request.FILES.get("arquivo")
+        nome    = request.data.get("nome", "").strip()
+        tipo    = request.data.get("tipo", "").strip()
+
+        if not arquivo:
+            return Response({"error": "O campo 'arquivo' é obrigatório."}, status=status.HTTP_400_BAD_REQUEST)
+        if not nome:
+            return Response({"error": "O campo 'nome' é obrigatório."}, status=status.HTTP_400_BAD_REQUEST)
+        if tipo not in ("portaria", "resolucao", "rod"):
+            return Response({"error": "O campo 'tipo' deve ser 'portaria', 'resolucao' ou 'rod'."}, status=status.HTTP_400_BAD_REQUEST)
+        if not arquivo.name.lower().endswith(".pdf"):
+            return Response({"error": "Apenas arquivos PDF são aceitos."}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            resultado = DocumentFactory.make_create().executar(
+                nome=nome,
+                tipo=tipo,
+                conteudo_arquivo=arquivo.read(),
+                nome_arquivo=arquivo.name,
+            )
+
+            log_action(
+                user=request.user,
+                action="CREATE",
+                resource_type="document",
+                resource_id=resultado.get("id"),
+                resource_name=nome,
+                details=f"Tipo: {tipo} | Arquivo: {arquivo.name}",
+            )
+
+            return Response(resultado, status=status.HTTP_201_CREATED)
+        except ValueError as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
@@ -61,6 +98,17 @@ class DocumentCreateView(APIView):
 
 class DocumentDetailView(APIView):
     permission_classes = [IsAuthenticated, IsAdminUser]
+
+    def delete(self, request, id_documento: int):
+        try:
+            resultado = DocumentFactory.make_delete().solicitar_exclusao(id_documento)
+            return Response(resultado, status=status.HTTP_200_OK)
+        except ValueError as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        except LookupError as e:
+            return Response({"error": str(e)}, status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     def patch(self, request, id_documento: int):
         nome    = request.data.get("nome") or None
@@ -117,7 +165,7 @@ class DocumentDeleteView(APIView):
 class DocumentConfirmDeleteView(APIView):
     permission_classes = [IsAuthenticated, IsAdminUser]
 
-    def delete(self, request, id_documento: int):
+    def post(self, request, id_documento: int):
         token = request.data.get("token", "").strip()
 
         if not token:

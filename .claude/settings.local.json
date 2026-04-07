@@ -1,0 +1,43 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(grep -E \"\\\\.\\(py|js|jsx\\)$\")",
+      "Bash(xargs wc:*)",
+      "Bash(python manage.py test Backend.tests --verbosity=2)",
+      "Bash(pip list:*)",
+      "Bash(pip install:*)",
+      "Bash(docker-compose up:*)",
+      "Bash(docker start:*)",
+      "Bash(docker exec:*)",
+      "Read(//c/Users/User/chatbot2/$APPDATA/**)",
+      "Read(//c/Users/User/chatbot2/$APPDATA/postgresql/**)",
+      "Bash(python -c \":*)",
+      "Bash(PGCLIENTENCODING=UTF8 python manage.py test Backend.tests --verbosity=2)",
+      "Bash(docker stop:*)",
+      "Bash(docker rm:*)",
+      "Bash(docker volume:*)",
+      "Bash(echo \"POSTGRES_DB=$POSTGRES_DB | POSTGRES_USER=$POSTGRES_USER | POSTGRES_PASSWORD=$POSTGRES_PASSWORD\")",
+      "Bash(docker port:*)",
+      "Bash(docker run:*)",
+      "Bash(docker inspect:*)",
+      "Bash(netstat -anb)",
+      "Bash(powershell.exe \"Get-Process -Id \\(Get-NetTCPConnection -LocalPort 5432\\).OwningProcess 2>&1 | Select-Object Id, ProcessName, Path\")",
+      "Bash(powershell.exe \"Get-Process -Id 7948 | Select-Object Id, ProcessName, Path, Description\")",
+      "Bash(powershell.exe \"\\(Get-Process -Id 7948\\).Path\")",
+      "Bash(powershell.exe \"Get-WmiObject Win32_Process -Filter ''ProcessId=7948'' | Select-Object ProcessId,ExecutablePath,CommandLine\")",
+      "Bash(powershell.exe \"Get-NetTCPConnection -LocalPort 5432 | Select-Object LocalAddress,LocalPort,OwningProcess\")",
+      "Bash(powershell.exe \"Get-WmiObject Win32_Process -Filter ''ProcessId=7108'' | Select-Object ProcessId,ExecutablePath,CommandLine,Name\")",
+      "Bash(docker-compose down:*)",
+      "Bash(find C:/Users/User/chatbot2/chatbot -type f -name *.py)",
+      "Bash(find C:/Users/User/chatbot2/Backend/app -type f -name *.py)",
+      "Bash(python manage.py test Backend.tests.api --verbosity=2)",
+      "Bash(python manage.py test Backend.tests --verbosity=1)",
+      "mcp__Claude_Preview__preview_start",
+      "Bash(npm run:*)",
+      "Bash(npm install:*)",
+      "Bash(python manage.py migrate)",
+      "Bash(pip show:*)",
+      "Bash(curl -s -X POST http://127.0.0.1:8000/api/chat/pergunta/ -H \"Content-Type: application/json; charset=utf-8\" --data-binary \"{\"\"question\"\": \"\"hello\"\"}\")"
+    ]
+  }
+}
