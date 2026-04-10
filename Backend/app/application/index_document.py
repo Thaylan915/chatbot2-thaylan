@@ -54,7 +54,8 @@ class IndexDocument:
 
         chunks = self._dividir_em_chunks(conteudo)
         textos = [chunk["conteudo"] for chunk in chunks]
-        embeddings = self._embedding_provider.embed_batch(textos)
+        # task_type='retrieval_document' otimiza o vetor para busca semântica
+        embeddings = self._embedding_provider.embed_batch(textos, task_type="retrieval_document")
 
         objetos = [
             ChunkDocumento(

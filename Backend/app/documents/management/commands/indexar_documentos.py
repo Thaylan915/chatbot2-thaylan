@@ -10,13 +10,13 @@ Uso:
 """
 
 import os
-import json
 from pathlib import Path
 
 from django.core.management.base import BaseCommand
 from django.conf import settings
 
 from Backend.app.documents.models import Documento, ChunkDocumento, TipoDocumento
+from Backend.app.infrastructure.embeddings.gemini_embedding import GeminiEmbeddingProvider
 
 
 # ─── Mapeamento pasta → tipo ──────────────────────────────────────────────────
@@ -74,9 +74,9 @@ class Command(BaseCommand):
             ))
             return
 
-        embedding_client = None
+        embedding_provider = None
         if gerar_embeddings:
-            embedding_client = self._criar_cliente_embedding()
+            embedding_provider = self._criar_provider_embedding()
 
         total_docs = 0
         total_chunks = 0
@@ -117,8 +117,8 @@ class Command(BaseCommand):
 
                     for i, chunk_texto in enumerate(chunks):
                         embedding = None
-                        if gerar_embeddings and embedding_client:
-                            embedding = self._gerar_embedding(embedding_client, chunk_texto)
+                        if gerar_embeddings and embedding_provider:
+                            embedding = self._gerar_embedding(embedding_provider, chunk_texto)
 
                         ChunkDocumento.objects.create(
                             documento=doc,
@@ -169,26 +169,21 @@ class Command(BaseCommand):
 
         return chunks
 
-    def _criar_cliente_embedding(self):
-        """Cria cliente Gemini para geração de embeddings."""
+    def _criar_provider_embedding(self):
+        """Instancia o GeminiEmbeddingProvider."""
+        if not settings.GEMINI_API_KEY:
+            self.stderr.write(self.style.WARNING("GEMINI_API_KEY não configurada."))
+            return None
         try:
-            import google.generativeai as genai
-            api_key = settings.GEMINI_API_KEY
-            if not api_key:
-                self.stderr.write(self.style.WARNING("GEMINI_API_KEY não configurada."))
-                return None
-            genai.configure(api_key=api_key)
-            return genai
-        except ImportError:
-            self.stderr.write(self.style.ERROR("google-generativeai não instalado."))
+            return GeminiEmbeddingProvider()
+        except Exception as e:
+            self.stderr.write(self.style.ERROR(f"Erro ao criar provider de embedding: {e}"))
             return None
 
-    def _gerar_embedding(self, client, texto: str) -> list[float] | None:
-        """Gera embedding para um texto via Gemini."""
+    def _gerar_embedding(self, provider: GeminiEmbeddingProvider, texto: str) -> list[float] | None:
+        """Gera embedding de documento (task_type='retrieval_document') via Gemini."""
         try:
-            model = settings.EMBEDDING_MODEL
-            result = client.embed_content(model=model, content=texto)
-            return result["embedding"]
+            return provider.embed(texto, task_type="retrieval_document")
         except Exception as e:
             self.stderr.write(f"     ⚠️  Erro ao gerar embedding: {e}")
             return None

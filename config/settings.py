@@ -91,4 +91,10 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 CHAT_MODEL = os.getenv("CHAT_MODEL", "gemini-1.5-flash")
 EMBEDDING_MODEL = os.getenv("EMBEDDING_MODEL", "models/text-embedding-004")
+
+# Número de chunks finais enviados ao LLM como contexto
 TOP_K = int(os.getenv("TOP_K", 5))
+
+# Candidatos buscados no pgvector antes do re-ranking MMR (deve ser > TOP_K)
+# Valores maiores melhoram a diversidade do contexto ao custo de mais memória
+RERANK_FETCH_K = int(os.getenv("RERANK_FETCH_K", TOP_K * 4))
