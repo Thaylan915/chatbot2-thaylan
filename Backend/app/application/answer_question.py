@@ -103,7 +103,8 @@ def gerar_resposta(pergunta_processada: str) -> tuple[str, str, bool]:
             
         return response.text, intencao, True
 
-    except Exception:
+    except Exception as e:
+        print(f"Erro na IA: {e}")
         return _MENSAGEM_ERRO_API, intencao, False
 
 def registrar_resposta(conversa: Conversa, resposta: str) -> Mensagem:

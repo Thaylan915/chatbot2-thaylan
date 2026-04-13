@@ -32,12 +32,20 @@ export default function ChatArea() {
 
       setMensagens((prev) => [
         ...prev,
-        { role: "assistant", texto: res.data.answer },
+        {
+          role: "assistant",
+          texto: res.data.answer,
+          respondida: res.data.respondida,
+        },
       ]);
     } catch {
       setMensagens((prev) => [
         ...prev,
-        { role: "assistant", texto: "Erro ao obter resposta. Tente novamente." },
+        {
+          role: "assistant",
+          texto: "Não foi possível conectar ao servidor. Tente novamente.",
+          respondida: false,
+        },
       ]);
     } finally {
       setCarregando(false);
@@ -60,11 +68,26 @@ export default function ChatArea() {
           </div>
         )}
 
-        {mensagens.map((m, i) => (
-          <div key={i} className={`mensagem ${m.role}`}>
-            <span>{m.texto}</span>
-          </div>
-        ))}
+        {mensagens.map((m, i) => {
+          const semResposta = m.role === "assistant" && m.respondida === false;
+          return (
+            <div
+              key={i}
+              className={`mensagem ${m.role}${semResposta ? " sem-resposta" : ""}`}
+            >
+              {semResposta && (
+                <div className="sem-resposta-header">
+                  {" "}
+                  <span className="sem-resposta-icone">&#9888;</span>{" "}
+                  <span className="sem-resposta-titulo">
+                    Não foi possível responder
+                  </span>{" "}
+                </div>
+              )}
+              <span>{m.texto}</span>
+            </div>
+          );
+        })}
 
         {carregando && (
           <div className="mensagem assistant">
@@ -85,7 +108,11 @@ export default function ChatArea() {
             onKeyDown={handleKeyDown}
             disabled={carregando}
           />
-          <button className="botaoEnviar" onClick={handleEnviar} disabled={carregando}>
+          <button
+            className="botaoEnviar"
+            onClick={handleEnviar}
+            disabled={carregando}
+          >
             <img src={enviarIcon} alt="Enviar" />
           </button>
         </div>

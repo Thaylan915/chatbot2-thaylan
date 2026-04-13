@@ -70,3 +70,28 @@ class ChatPerguntaView(APIView):
             },
             status=status.HTTP_200_OK,
         )
+
+
+class ChatHistoricoView(APIView):
+
+    def get(self, request, conversa_id: int):
+        try:
+            conversa = Conversa.objects.get(id=conversa_id)
+        except Conversa.DoesNotExist:
+            return Response(
+                {"error": "Conversa não encontrada."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        mensagens = conversa.mensagens.all()
+        data = [
+            {
+                "id":                  m.id,
+                "role":                m.role,
+                "conteudo_original":   m.conteudo_original,
+                "conteudo_processado": m.conteudo_processado,
+                "criada_em":           m.criada_em,
+            }
+            for m in mensagens
+        ]
+        return Response({"conversa_id": conversa_id, "mensagens": data})

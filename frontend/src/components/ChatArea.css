@@ -91,3 +91,32 @@
   background-color: #393e46;
   border-radius: 50%;
 }
+
+.mensagem.assistant.sem-resposta {
+  background-color: #3a2f1e;
+  border: 1px solid #7a5c2a;
+  color: #f0c87a;
+}
+
+.sem-resposta-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #7a5c2a;
+}
+
+.sem-resposta-icone {
+  font-size: 16px;
+  color: #e6a020;
+  flex-shrink: 0;
+}
+
+.sem-resposta-titulo {
+  font-size: 13px;
+  font-weight: 600;
+  color: #e6a020;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
