@@ -1,16 +1,81 @@
-# React + Vite
+# Frontend - Chatbot IFES
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Aplicacao web em React + Vite para interface do chatbot e area administrativa.
 
-Currently, two official plugins are available:
+## Stack
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+- React 19
+- Vite 8
+- Axios
+- React Router DOM
+- ESLint
 
-## React Compiler
+## Requisitos
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+- Node.js 18+
+- npm 9+
+- Backend rodando em http://127.0.0.1:8000
 
-## Expanding the ESLint configuration
+## Instalar e rodar
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+Na pasta frontend:
+
+```bash
+npm install
+npm run dev
+```
+
+Aplicacao disponivel em:
+
+- http://localhost:5173
+
+## Scripts disponiveis
+
+- npm run dev: inicia servidor de desenvolvimento
+- npm run build: gera build de producao
+- npm run preview: sobe preview local da build
+- npm run lint: executa lint
+
+## Integracao com API
+
+Cliente HTTP principal:
+
+- src/services/api.jsx
+
+Configuracao atual:
+
+- baseURL: http://127.0.0.1:8000
+- injecao automatica de token JWT no header Authorization
+- tratamento global de 401 (limpa tokens e redireciona para /)
+
+Autenticacao no frontend:
+
+- src/services/authService.js usa POST /api/token/
+
+## Estrutura principal
+
+```text
+frontend/
+├── src/
+│   ├── components/
+│   ├── pages/
+│   ├── services/
+│   │   ├── api.jsx
+│   │   └── authService.js
+│   ├── App.jsx
+│   └── main.jsx
+├── public/
+├── package.json
+└── vite.config.js
+```
+
+## Fluxo de chat (resumo)
+
+- A tela de chat envia perguntas para POST /api/chat/pergunta/
+- O frontend armazena conversa_id retornado pela API para continuidade da conversa
+- Em caso de erro, exibe mensagem de fallback para o usuario
+
+## Observacoes
+
+- Nao ha variavel de ambiente de API no frontend neste momento; a URL esta fixa em src/services/api.jsx.
+- Se quiser preparar para multiplos ambientes (dev/homolog/prod), o proximo passo recomendado e migrar baseURL para VITE_API_URL.

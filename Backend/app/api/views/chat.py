@@ -13,10 +13,6 @@ from Backend.app.documents.models import Conversa, Mensagem
 
 
 class ChatIniciarView(APIView):
-    """
-    POST /api/chat/iniciar/
-    Cria uma nova conversa e retorna o id da sessão. #34
-    """
     permission_classes = [AllowAny]
 
     def post(self, request):
@@ -32,10 +28,6 @@ class ChatIniciarView(APIView):
 
 
 class ChatPerguntaView(APIView):
-    """
-    POST /api/chat/pergunta/
-    Recebe uma pergunta, registra original e processada, retorna resposta. #35 #36 #37
-    """
     permission_classes = [AllowAny]
 
     def post(self, request):
@@ -48,7 +40,6 @@ class ChatPerguntaView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        # Busca conversa existente ou cria uma nova
         if conversa_id:
             try:
                 conversa = Conversa.objects.get(id=conversa_id)
@@ -61,30 +52,27 @@ class ChatPerguntaView(APIView):
             user = request.user if request.user.is_authenticated else None
             conversa = iniciar_conversa(user=user)
 
-        # Registra pergunta original (#36) e processada (#37)
         mensagem = registrar_mensagem(conversa, question)
 
-        # Gera e registra resposta
-        resposta, respondida = gerar_resposta(mensagem.conteudo_processado)
+        # Integração: Resposta, Intenção e a nova flag 'respondida'
+        resposta, intencao, respondida = gerar_resposta(mensagem.conteudo_processado)
+        
         registrar_resposta(conversa, resposta)
 
         return Response(
             {
-                "conversa_id":          conversa.id,
-                "pergunta_original":    mensagem.conteudo_original,
-                "pergunta_processada":  mensagem.conteudo_processado,
-                "answer":               resposta,
-                "respondida":           respondida,
+                "conversa_id":         conversa.id,
+                "pergunta_original":   mensagem.conteudo_original,
+                "pergunta_processada": mensagem.conteudo_processado,
+                "intencao":            intencao,
+                "answer":              resposta,
+                "respondida":          respondida,
             },
             status=status.HTTP_200_OK,
         )
 
 
 class ChatHistoricoView(APIView):
-    """
-    GET /api/chat/<conversa_id>/historico/
-    Retorna o histórico completo de uma conversa.
-    """
 
     def get(self, request, conversa_id: int):
         try:
@@ -98,11 +86,11 @@ class ChatHistoricoView(APIView):
         mensagens = conversa.mensagens.all()
         data = [
             {
-                "id":                   m.id,
-                "role":                 m.role,
-                "conteudo_original":    m.conteudo_original,
-                "conteudo_processado":  m.conteudo_processado,
-                "criada_em":            m.criada_em,
+                "id":                  m.id,
+                "role":                m.role,
+                "conteudo_original":   m.conteudo_original,
+                "conteudo_processado": m.conteudo_processado,
+                "criada_em":           m.criada_em,
             }
             for m in mensagens
         ]
