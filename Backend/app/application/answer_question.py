@@ -1,9 +1,16 @@
 """Caso de uso: responder pergunta do usuário usando o banco de documentos."""
 import re
 import math
+import google.generativeai as genai
 from django.conf import settings
 from Backend.app.documents.models import Conversa, Mensagem, ChunkDocumento
+from Backend.app.application.intent_classifier import (
+    classificar_intencao,
+    RESPOSTAS_DIRETAS,
+)
 
+# Configuração estável do Google
+genai.configure(api_key=settings.GEMINI_API_KEY)
 
 def preprocessar_pergunta(texto: str) -> str:
     texto = texto.strip()
@@ -12,14 +19,10 @@ def preprocessar_pergunta(texto: str) -> str:
     texto = re.sub(r'[^\w\s\?\!\.\,\á\é\í\ó\ú\ã\õ\â\ê\ô\ç]', '', texto)
     return texto
 
-
 def iniciar_conversa(user=None) -> Conversa:
-    """Cria e retorna uma nova conversa. #34"""
     return Conversa.objects.create(user=user)
 
-
 def registrar_mensagem(conversa: Conversa, pergunta_original: str) -> Mensagem:
-    """Registra a pergunta original (#36) e a processada (#37)."""
     pergunta_processada = preprocessar_pergunta(pergunta_original)
     mensagem = Mensagem.objects.create(
         conversa=conversa,
@@ -29,9 +32,7 @@ def registrar_mensagem(conversa: Conversa, pergunta_original: str) -> Mensagem:
     )
     return mensagem
 
-
 def _cosseno(a, b):
-    """Similaridade de cosseno entre dois vetores."""
     dot = sum(x * y for x, y in zip(a, b))
     norm_a = math.sqrt(sum(x * x for x in a))
     norm_b = math.sqrt(sum(x * x for x in b))
@@ -39,79 +40,85 @@ def _cosseno(a, b):
         return 0.0
     return dot / (norm_a * norm_b)
 
-
 def _embeddar(texto: str):
-    """Gera embedding usando google.genai."""
-    from google import genai
-    client = genai.Client(
-        api_key=settings.GEMINI_API_KEY,
-        http_options={"api_version": "v1"},
-    )
-    result = client.models.embed_content(
-        model=settings.EMBEDDING_MODEL,
-        contents=texto,
-    )
-    return result.embeddings[0].values
+    import google.generativeai as genai
+    from django.conf import settings
+    genai.configure(api_key=settings.GEMINI_API_KEY)
+    
+    # Este é o modelo que apareceu com "✅" no seu log de indexação:
+    modelo_que_funciona = "models/gemini-embedding-001"
 
-
+    try:
+        result = genai.embed_content(
+            model=modelo_que_funciona,
+            content=texto,
+            task_type="retrieval_query"
+        )
+        return result['embedding']
+    except Exception as e:
+        # Plano B caso o Google queira o nome sem o prefixo 'models/'
+        result = genai.embed_content(
+            model="gemini-embedding-001",
+            content=texto,
+            task_type="retrieval_query"
+        )
+        return result['embedding']
 def _buscar_chunks(embedding_pergunta, top_k: int):
-    """Busca os chunks mais relevantes por similaridade de cosseno."""
     chunks = ChunkDocumento.objects.exclude(embedding=None).select_related("documento")
     scored = []
     for chunk in chunks:
-        if not chunk.embedding:
-            continue
         sim = _cosseno(embedding_pergunta, chunk.embedding)
         scored.append((sim, chunk))
+    
     scored.sort(key=lambda x: x[0], reverse=True)
     return [chunk for _, chunk in scored[:top_k]]
 
+def gerar_resposta(pergunta_processada: str) -> tuple[str, str]:
+    intencao = classificar_intencao(pergunta_processada)
 
-def gerar_resposta(pergunta_processada: str) -> str:
-    """Busca contexto nos documentos e gera resposta via Gemini."""
-    if not settings.GEMINI_API_KEY:
-        return "API key do Gemini não configurada."
+    if intencao in RESPOSTAS_DIRETAS:
+        return RESPOSTAS_DIRETAS[intencao], intencao
 
     try:
-        embedding_pergunta = _embeddar(pergunta_processada)
+        emb = _embeddar(pergunta_processada)
         top_k = getattr(settings, "TOP_K", 5)
-        chunks_relevantes = _buscar_chunks(embedding_pergunta, top_k)
+        chunks = _buscar_chunks(emb, top_k)
 
-        if chunks_relevantes:
-            contexto = "\n\n".join(
-                f"[{c.documento.nome}]\n{c.conteudo}" for c in chunks_relevantes
-            )
-            prompt = (
-                "Você é um assistente especializado em documentos institucionais. "
-                "Use apenas o contexto abaixo para responder em português. "
-                "Se a resposta não estiver no contexto, diga que não encontrou a informação.\n\n"
-                f"Contexto:\n{contexto}\n\n"
-                f"Pergunta: {pergunta_processada}"
-            )
-        else:
-            prompt = (
-                "Você é um assistente institucional. "
-                "Não há documentos indexados na base de conhecimento ainda. "
-                f"Responda em português à pergunta: {pergunta_processada}"
-            )
+        contexto = "\n\n".join([f"[{c.documento.nome}]: {c.conteudo}" for c in chunks]) if chunks else "Sem contexto."
+        
+        prompt = (
+            "Você é um assistente institucional do IFES. "
+            "Responda à pergunta do usuário de forma clara e educada, baseando-se APENAS no contexto abaixo.\n\n"
+            f"Contexto:\n{contexto}\n\n"
+            f"Pergunta: {pergunta_processada}"
+        )
 
-        from google import genai
-        client = genai.Client(
-            api_key=settings.GEMINI_API_KEY,
-            http_options={"api_version": "v1"},
-        )
-        response = client.models.generate_content(
-            model=settings.CHAT_MODEL,
-            contents=prompt,
-        )
-        return response.text
+        import google.generativeai as genai
+        genai.configure(api_key=settings.GEMINI_API_KEY)
+        
+        # A CARTADA FINAL: Pega dinamicamente o modelo de texto que o Google aprovar!
+        modelo_texto = "gemini-1.5-flash" # Fallback
+        try:
+            para_chat = [m.name for m in genai.list_models() if 'generateContent' in m.supported_generation_methods]
+            if para_chat:
+                modelo_texto = para_chat[0] # Pega o primeiro que funcionar
+                # Se tiver a versão flash na lista, dá preferência pra ela que é mais rápida
+                for m in para_chat:
+                    if 'flash' in m:
+                        modelo_texto = m
+                        break
+        except Exception:
+            pass
+
+        model = genai.GenerativeModel(modelo_texto)
+        response = model.generate_content(prompt)
+            
+        return response.text, intencao
 
     except Exception as e:
-        return f"Erro ao gerar resposta: {str(e)}"
-
+        return f"Erro na IA: {str(e)}", intencao
 
 def registrar_resposta(conversa: Conversa, resposta: str) -> Mensagem:
-    """Registra a resposta do assistente na conversa."""
     return Mensagem.objects.create(
         conversa=conversa,
         role="assistant",
