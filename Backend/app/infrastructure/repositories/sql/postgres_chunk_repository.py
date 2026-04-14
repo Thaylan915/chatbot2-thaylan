@@ -18,6 +18,7 @@ _SQL_SIMILARES = """
     SELECT
         c.id,
         c.conteudo,
+        c.numero_pagina,
         d.id   AS documento_id,
         d.nome AS documento_nome
     FROM documents_chunkdocumento c
@@ -33,6 +34,7 @@ _SQL_CANDIDATOS = """
     SELECT
         c.id,
         c.conteudo,
+        c.numero_pagina,
         d.id   AS documento_id,
         d.nome AS documento_nome,
         1 - (c.embedding::text::vector <=> %s::vector) AS score,

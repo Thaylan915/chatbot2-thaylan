@@ -37,9 +37,10 @@ export default function ChatArea() {
       setMensagens((prev) => [
         ...prev,
         {
-          role: "assistant",
-          conteudo: res.data.answer,
-          fontes: res.data.fontes ?? [],
+          role:       "assistant",
+          conteudo:   res.data.answer,
+          fontes:     res.data.fontes    ?? [],
+          citacoes:   res.data.citacoes  ?? [],
           respondida: res.data.respondida,
         },
       ]);
@@ -47,9 +48,10 @@ export default function ChatArea() {
       setMensagens((prev) => [
         ...prev,
         {
-          role: "assistant",
-          conteudo: "Não foi possível conectar ao servidor. Tente novamente.",
-          fontes: [],
+          role:       "assistant",
+          conteudo:   "Não foi possível conectar ao servidor. Tente novamente.",
+          fontes:     [],
+          citacoes:   [],
           respondida: false,
         },
       ]);
@@ -90,16 +92,11 @@ export default function ChatArea() {
                       </span>
                     </div>
                   )}
+
                   <div className="textoBolha">{msg.conteudo}</div>
-                  {msg.fontes && msg.fontes.length > 0 && (
-                    <div className="fontesArea">
-                      <span className="fontesTitulo">Fontes:</span>
-                      {msg.fontes.map((fonte) => (
-                        <span key={fonte.id} className="fonteTag">
-                          {fonte.nome}
-                        </span>
-                      ))}
-                    </div>
+
+                  {msg.citacoes && msg.citacoes.length > 0 && (
+                    <CitacoesArea citacoes={msg.citacoes} />
                   )}
                 </div>
               );
@@ -139,6 +136,41 @@ export default function ChatArea() {
           </button>
         </div>
       </div>
+    </div>
+  );
+}
+
+function CitacoesArea({ citacoes }) {
+  const [aberto, setAberto] = useState(false);
+
+  return (
+    <div className="citacoesArea">
+      <button
+        className="citacoesToggle"
+        onClick={() => setAberto((v) => !v)}
+        aria-expanded={aberto}
+      >
+        <span className="citacoesIcone">&#128196;</span>
+        <span>{citacoes.length} fonte{citacoes.length !== 1 ? "s" : ""} consultada{citacoes.length !== 1 ? "s" : ""}</span>
+        <span className="citacoesChevron">{aberto ? "▲" : "▼"}</span>
+      </button>
+
+      {aberto && (
+        <ul className="citacoesList">
+          {citacoes.map((c) => (
+            <li key={c.ordem} className="citacaoCard">
+              <div className="citacaoHeader">
+                <span className="citacaoOrdem">{c.ordem}</span>
+                <span className="citacaoDoc">{c.documento_nome}</span>
+                {c.numero_pagina && (
+                  <span className="citacaoPagina">pág.&nbsp;{c.numero_pagina}</span>
+                )}
+              </div>
+              <blockquote className="citacaoTrecho">"{c.trecho}"</blockquote>
+            </li>
+          ))}
+        </ul>
+      )}
     </div>
   );
 }

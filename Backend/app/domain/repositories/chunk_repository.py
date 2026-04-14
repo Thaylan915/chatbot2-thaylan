@@ -13,6 +13,7 @@ class ChunkRepository(ABC):
         Cada dict contém:
             - id:             int
             - conteudo:       str
+            - numero_pagina:  int | None
             - documento_id:   int
             - documento_nome: str
         """
@@ -26,6 +27,7 @@ class ChunkRepository(ABC):
         Cada dict contém:
             - id:             int
             - conteudo:       str
+            - numero_pagina:  int | None
             - documento_id:   int
             - documento_nome: str
             - score:          float  (similaridade de cosseno, 0–1, maior = mais relevante)
