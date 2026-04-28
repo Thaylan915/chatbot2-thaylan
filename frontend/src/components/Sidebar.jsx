@@ -1,11 +1,11 @@
 import { useEffect, useState } from "react";
 import "./Sidebar.css";
-import logo        from "../assets/images/logo_chatbot.svg";
+import logo from "../assets/images/logo_chatbot.svg";
 import hideSidebar from "../assets/images/hide-sidebar.svg";
-import novoChat    from "../assets/images/novo_chat.svg";
-import historico   from "../assets/images/historico.svg";
+import novoChat from "../assets/images/novo_chat.svg";
+import historico from "../assets/images/historico.svg";
 import basedeconhec from "../assets/images/basedeconhecimento.svg";
-import metricas    from "../assets/images/metricas.svg";
+import metricas from "../assets/images/metricas.svg";
 
 import { useLocation } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
@@ -76,18 +76,27 @@ export default function Sidebar({ tipo }) {
 
         {tipo === "admin" && (
           <>
-            <div className="item menu" onClick={() => navigate("/admin/base-de-conhecimento")}>
-              <img src={basedeconhec} className="icon" alt="Base" />
+            <div
+              className="item menu"
+              onClick={() => navigate("/admin/base-de-conhecimento")}
+            >
+              <img src={basedeconhec} className="icon" />
               <span>Base de conhecimento</span>
             </div>
 
-            <div className="item menu" onClick={() => navigate("/admin/metricas")}>
-              <img src={metricas} className="icon" alt="Métricas" />
+            <div
+              className="item menu"
+              onClick={() => navigate("/admin/metricas")}
+            >
+              <img src={metricas} className="icon" />
               <span>Métricas</span>
             </div>
 
-            <div className="item menu" onClick={() => navigate("/admin/historico")}>
-              <img src={historico} className="icon" alt="Histórico" />
+            <div
+              className="item menu"
+              onClick={() => navigate("/admin/historico")}
+            >
+              <img src={historico} className="icon" />
               <span>Histórico</span>
             </div>
           </>

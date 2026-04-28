@@ -4,6 +4,7 @@ import Cadastro from "./pages/Cadastro";
 import Chat from "./pages/Chat";
 import BaseDeConhecimento from "./pages/BaseDeConhecimento";
 import Metricas from "./pages/Metricas";
+import Historico from "./pages/Historico";
 import { authService } from "./services/authService";
 import Historico from "./pages/Historico";
 
