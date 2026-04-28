@@ -1,0 +1,175 @@
+.histArea {
+  flex: 1;
+  min-height: 100vh;
+  background-color: #393e46;
+  color: white;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* TOPO */
+.topo {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: #222831;
+  padding: 20px 40px;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.topo h2 {
+  font-size: 32px;
+  margin: 0;
+}
+
+.btnExportar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+
+  background-color: #393e46;
+  color: #eeeeee;
+  border: none;
+  border-radius: 22px;
+  cursor: pointer;
+  font-weight: bold;
+  font-size: 18px;
+  padding: 10px 20px;
+}
+
+.btnExportar img {
+  width: 18px;
+  height: 18px;
+  filter: invert();
+}
+
+.btnExportar:hover {
+  background-color: #eeeeee;
+  color: #222831;
+}
+
+.btnExportar:hover img {
+  filter: invert(0);
+}
+
+/* FILTRO */
+.filtroHistorico {
+  display: flex;
+  justify-content: center;
+  padding: 0 20px;
+}
+
+.cardFiltro {
+  width: 100%;
+  background-color: #222831;
+  border-radius: 22px;
+  padding: 15px;
+
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.espaco {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 180px;
+}
+
+.espaco label {
+  font-size: 18px;
+  margin-bottom: 5px;
+}
+
+.espaco select {
+  height: 45px;
+  width: 100%;
+  padding: 0 10px;
+  border-radius: 10px;
+  border: none;
+  background-color: #ffffff;
+  color: #222831;
+  font-size: 16px;
+  font-weight: bold;
+}
+
+.espaco:last-child {
+  flex: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btnFiltrar {
+  height: 45px;
+  padding: 0 25px;
+  border-radius: 10px;
+  font-size: 18px;
+  border: none;
+  background-color: #ffffff;
+  color: #222831;
+  font-weight: bold;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.btnFiltrar:hover {
+  background-color: #393e46;
+  color: #ffffff;
+}
+
+/* HISTÓRICOS (SCROLL) */
+.areaHistoricos {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  padding: 0 20px 20px;
+
+  overflow-y: auto;
+  min-height: 0;
+}
+
+.areaHistoricos::-webkit-scrollbar {
+  width: 6px;
+}
+
+.areaHistoricos::-webkit-scrollbar-thumb {
+  background-color: #eeeeee;
+  border-radius: 10px;
+}
+
+/* RESPONSIVO */
+@media (max-width: 768px) {
+  .topo {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .btnExportar {
+    width: 100%;
+  }
+
+  .cardFiltro {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .espaco {
+    width: 100%;
+  }
+
+  .espaco:last-child {
+    justify-content: flex-start;
+  }
+
+  .btnFiltrar {
+    width: 100%;
+  }
+}
