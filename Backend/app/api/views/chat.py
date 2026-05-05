@@ -88,7 +88,11 @@ class ChatPerguntaView(APIView):
                 conversa = iniciar_conversa(user=user)
 
             mensagem = registrar_mensagem(conversa, question)
-            resposta_msg = registrar_resposta(conversa, RESPOSTAS_DIRETAS[intencao])
+            resposta_msg = registrar_resposta(
+                conversa,
+                RESPOSTAS_DIRETAS[intencao],
+                respondida=True,  # saudação/agradecimento sempre tem resposta direta
+            )
 
             return Response(
                 {
@@ -143,6 +147,7 @@ class ChatPerguntaView(APIView):
             conversa,
             resultado["resposta"],
             ids_fontes=[f["id"] for f in resultado["fontes"]],
+            respondida=resultado["respondida"],
         )
 
         return Response(
@@ -326,15 +331,15 @@ class ChatMetricasView(APIView):
     GET /api/chat/metricas/
     Retorna estatísticas gerais para o dashboard de métricas.
     """
-    permission_classes = [AllowAny] 
+    permission_classes = [AllowAny]
 
     def get(self, request):
         total_conversas = Conversa.objects.count()
         total_mensagens = Mensagem.objects.count()
-        
+
         # Média das notas (Issue 4)
         media_notas = Mensagem.objects.filter(role="assistant").exclude(nota=None).aggregate(Avg('nota'))['nota__avg'] or 0
-        
+
         # Contagem de feedbacks positivos e negativos
         positivos = Mensagem.objects.filter(role="assistant", nota=1).count()
         negativos = Mensagem.objects.filter(role="assistant", nota=-1).count()
@@ -348,11 +353,71 @@ class ChatMetricasView(APIView):
             .order_by('iniciada_em__date')
         )
 
+        # ─── Taxa de sucesso de respostas ─────────────────────────────────────
+        # Considera apenas mensagens do assistente com `respondida` instrumentado
+        # (registros antigos têm NULL e ficam fora do cálculo).
+        respostas_instrumentadas = Mensagem.objects.filter(
+            role="assistant",
+            respondida__isnull=False,
+        )
+        total_respostas = respostas_instrumentadas.count()
+        respondidas_ok = respostas_instrumentadas.filter(respondida=True).count()
+        taxa_sucesso = (
+            round(respondidas_ok / total_respostas * 100, 1)
+            if total_respostas else 0.0
+        )
+
+        # ─── Taxa de reformulação ─────────────────────────────────────────────
+        # Reformulação = pergunta do usuário enviada logo após o assistente
+        # ter declarado que não encontrou resposta (respondida=False).
+        # Numerador: nº dessas perguntas. Denominador: total de perguntas (user).
+        total_perguntas = Mensagem.objects.filter(role="user").count()
+        reformulacoes = self._contar_reformulacoes()
+        taxa_reformulacao = (
+            round(reformulacoes / total_perguntas * 100, 1)
+            if total_perguntas else 0.0
+        )
+
         return Response({
-            "total_conversas": total_conversas,
-            "total_mensagens": total_mensagens,
-            "media_notas": round(float(media_notas), 2),
+            "total_conversas":     total_conversas,
+            "total_mensagens":     total_mensagens,
+            "media_notas":         round(float(media_notas), 2),
             "feedbacks_positivos": positivos,
             "feedbacks_negativos": negativos,
-            "grafico": list(conversas_por_dia)
+            "grafico":             list(conversas_por_dia),
+
+            # Taxa de sucesso
+            "taxa_sucesso":        taxa_sucesso,
+            "respostas_ok":        respondidas_ok,
+            "respostas_total":     total_respostas,
+
+            # Taxa de reformulação
+            "taxa_reformulacao":   taxa_reformulacao,
+            "reformulacoes":       reformulacoes,
+            "perguntas_total":     total_perguntas,
         }, status=status.HTTP_200_OK)
+
+    @staticmethod
+    def _contar_reformulacoes() -> int:
+        """
+        Conta perguntas do usuário que vieram logo após uma resposta do
+        assistente marcada como `respondida=False` (mesma conversa).
+
+        Implementação em Python: percorre cada conversa em ordem cronológica
+        e detecta o padrão [assistant respondida=False] → [user]. É O(n) sobre
+        o total de mensagens; suficiente para os volumes esperados aqui.
+        """
+        reformulacoes = 0
+        conversas = Conversa.objects.prefetch_related("mensagens").all()
+        for conversa in conversas:
+            msgs = list(conversa.mensagens.all().order_by("criada_em"))
+            for i in range(1, len(msgs)):
+                anterior = msgs[i - 1]
+                atual = msgs[i]
+                if (
+                    atual.role == "user"
+                    and anterior.role == "assistant"
+                    and anterior.respondida is False
+                ):
+                    reformulacoes += 1
+        return reformulacoes

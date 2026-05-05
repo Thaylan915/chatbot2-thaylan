@@ -133,6 +133,14 @@ class Mensagem(models.Model):
                            )
     nota = models.IntegerField(null=True, blank=True, help_text="Nota de 1 a 5, ou 1 para Like e -1 para Dislike")
     comentario = models.TextField(null=True, blank=True)
+    respondida = models.BooleanField(
+        null=True, blank=True,
+        help_text=(
+            "Apenas para role='assistant'. True quando o modelo encontrou resposta "
+            "no contexto; False quando declarou desconhecimento. NULL para mensagens "
+            "do usuário ou registros antigos (pré-instrumentação)."
+        ),
+    )
     criada_em            = models.DateTimeField(auto_now_add=True)
 
     class Meta:

@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python -m pytest Backend/tests/application/test_citacoes.py --tb=short)",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "Bash(python auditoria_vendas.py)",
+      "Bash(python -c \"import reportlab; print\\(reportlab.Version\\)\")",
+      "Bash(python gerar_pdf.py)",
+      "Bash(python -c ' *)"
+    ]
+  }
+}

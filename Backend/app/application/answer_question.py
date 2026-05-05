@@ -496,6 +496,7 @@ def registrar_resposta(
     conversa: Conversa,
     resposta: str,
     ids_fontes: List[int] | None = None,
+    respondida: bool | None = None,
 ) -> Mensagem:
     """
     Registra a resposta do assistente e vincula os documentos de origem.
@@ -504,12 +505,16 @@ def registrar_resposta(
         conversa:   sessão de chat.
         resposta:   texto gerado pelo modelo.
         ids_fontes: IDs dos Documentos usados como contexto RAG.
+        respondida: True se o modelo encontrou resposta no contexto, False se
+                    declarou desconhecimento, None para fluxos sem essa
+                    semântica (saudações, agradecimentos etc., quando aplicável).
     """
     mensagem = Mensagem.objects.create(
         conversa=conversa,
         role="assistant",
         conteudo_original=resposta,
         conteudo_processado=resposta,
+        respondida=respondida,
     )
     if ids_fontes:
         documentos = Documento.objects.filter(id__in=ids_fontes)
