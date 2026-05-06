@@ -1,73 +1,160 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import Sidebar from "../components/Sidebar";
 import api from "../services/api";
 
-const LABELS = {
-  LOGIN:   "🔐 Login",
-  LOGOUT:  "🚪 Logout",
-  CREATE:  "➕ Criação",
-  UPDATE:  "✏️ Edição",
-  DELETE:  "🗑️ Exclusão",
-  REINDEX: "🔄 Reindexação",
+const cardStyle = {
+  background: "#393e46",
+  border: "1px solid #4a5060",
+  borderRadius: 12,
+  padding: "20px 24px",
+  fontFamily: "Poppins",
+  color: "#eee",
+  minWidth: 220,
+  flex: "1 1 220px",
+};
+
+const valorStyle = {
+  fontSize: 38,
+  fontWeight: 700,
+  color: "#00adb5",
+  marginTop: 8,
+};
+
+const labelStyle = {
+  fontSize: 13,
+  opacity: 0.7,
 };
 
 export default function Metricas() {
-  const [logs, setLogs]       = useState([]);
-  const [erro, setErro]       = useState("");
-  const [loading, setLoading] = useState(true);
+  const [m, setM] = useState(null);
+  const [erro, setErro] = useState(null);
+  const [carregando, setCarregando] = useState(true);
 
   useEffect(() => {
-    api.get("/api/admin-logs/")
-      .then((res) => setLogs(res.data))
-      .catch(() => setErro("Erro ao carregar logs."))
-      .finally(() => setLoading(false));
+    api
+      .get("/api/admin/metrics/")
+      .then((res) => setM(res.data))
+      .catch((e) =>
+        setErro(e.response?.data?.error || "Erro ao carregar métricas")
+      )
+      .finally(() => setCarregando(false));
   }, []);
 
   return (
     <div style={{ display: "flex", height: "100vh", backgroundColor: "#222831" }}>
-      <Sidebar tipo="admin" />
-
-      <div style={{ flex: 1, padding: "30px", overflowY: "auto" }}>
-        <h2 style={{ color: "#00adb5", fontFamily: "Poppins", marginBottom: "24px" }}>
-          Registro de Ações Administrativas
+      <Sidebar />
+      <div style={{ flex: 1, padding: 30, overflowY: "auto" }}>
+        <h2 style={{ color: "#00adb5", fontFamily: "Poppins", marginBottom: 24 }}>
+          Métricas do Chatbot
         </h2>
 
-        {loading && <p style={{ color: "#eeeeee", fontFamily: "Poppins" }}>Carregando...</p>}
-        {erro    && <p style={{ color: "red",     fontFamily: "Poppins" }}>{erro}</p>}
+        {carregando && <p style={{ color: "#eee", fontFamily: "Poppins" }}>Carregando...</p>}
+        {erro && <p style={{ color: "#f55", fontFamily: "Poppins" }}>{erro}</p>}
 
-        {!loading && !erro && (
-          <table style={{ width: "100%", borderCollapse: "collapse", fontFamily: "Poppins" }}>
-            <thead>
-              <tr style={{ borderBottom: "2px solid #00adb5", color: "#00adb5", textAlign: "left" }}>
-                <th style={{ padding: "10px" }}>Data/Hora</th>
-                <th style={{ padding: "10px" }}>Usuário</th>
-                <th style={{ padding: "10px" }}>Ação</th>
-                <th style={{ padding: "10px" }}>Recurso</th>
-                <th style={{ padding: "10px" }}>Nome</th>
-                <th style={{ padding: "10px" }}>Detalhes</th>
-              </tr>
-            </thead>
-            <tbody>
-              {logs.map((log) => (
-                <tr key={log.id} style={{ borderBottom: "1px solid #393e46", color: "#eeeeee" }}>
-                  <td style={{ padding: "10px", fontSize: "13px", opacity: 0.7 }}>{log.timestamp}</td>
-                  <td style={{ padding: "10px" }}>{log.user}</td>
-                  <td style={{ padding: "10px" }}>{LABELS[log.action] ?? log.action}</td>
-                  <td style={{ padding: "10px", opacity: 0.7 }}>{log.resource_type || "—"}</td>
-                  <td style={{ padding: "10px" }}>{log.resource_name || "—"}</td>
-                  <td style={{ padding: "10px", fontSize: "13px", opacity: 0.7 }}>{log.details || "—"}</td>
-                </tr>
-              ))}
-              {logs.length === 0 && (
-                <tr>
-                  <td colSpan={6} style={{ padding: "30px", textAlign: "center", color: "#eeeeee", opacity: 0.4 }}>
-                    Nenhuma ação registrada ainda.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
+        {m && (
+          <>
+            {/* Cards destacados — Taxa de acurácia e Taxa de sucesso */}
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 16, marginBottom: 24 }}>
+              <div
+                style={{
+                  ...cardStyle,
+                  background: "linear-gradient(135deg, #00adb5 0%, #007a80 100%)",
+                  color: "#fff",
+                  flex: "1 1 320px",
+                  maxWidth: 480,
+                }}
+              >
+                <div style={{ ...labelStyle, color: "rgba(255,255,255,0.9)", fontSize: 14 }}>
+                  Taxa de acurácia
+                </div>
+                <div style={{ ...valorStyle, color: "#fff", fontSize: 56 }}>
+                  {m.taxa_acuracia === null ? "—" : `${m.taxa_acuracia}%`}
+                </div>
+                <div style={{ fontSize: 13, opacity: 0.9, marginTop: 4 }}>
+                  {m.feedback_avaliadas === 0
+                    ? "Ainda não há respostas avaliadas pelos usuários."
+                    : `${m.feedback_positivos} positivas de ${m.feedback_avaliadas} avaliadas`}
+                </div>
+                <div style={{ fontSize: 11, opacity: 0.75, marginTop: 6, fontStyle: "italic" }}>
+                  positivos ÷ (positivos + negativos)
+                </div>
+              </div>
+
+              <div
+                style={{
+                  ...cardStyle,
+                  background: "linear-gradient(135deg, #4caf50 0%, #2e7d32 100%)",
+                  color: "#fff",
+                  flex: "1 1 320px",
+                  maxWidth: 480,
+                }}
+              >
+                <div style={{ ...labelStyle, color: "rgba(255,255,255,0.9)", fontSize: 14 }}>
+                  Taxa de sucesso
+                </div>
+                <div style={{ ...valorStyle, color: "#fff", fontSize: 56 }}>
+                  {m.taxa_sucesso === null ? "—" : `${m.taxa_sucesso}%`}
+                </div>
+                <div style={{ fontSize: 13, opacity: 0.9, marginTop: 4 }}>
+                  {m.total_respostas === 0
+                    ? "Nenhuma resposta gerada ainda."
+                    : `${m.respostas_bem_sucedidas} aceitas de ${m.total_respostas} respostas`}
+                </div>
+                <div style={{ fontSize: 11, opacity: 0.75, marginTop: 6, fontStyle: "italic" }}>
+                  respostas sem 👎 e sem regeneração ÷ total
+                </div>
+              </div>
+            </div>
+
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 16, marginBottom: 32 }}>
+              <div style={cardStyle}>
+                <div style={labelStyle}>Quantidade de respostas</div>
+                <div style={valorStyle}>{m.total_respostas}</div>
+              </div>
+
+              <div style={cardStyle}>
+                <div style={labelStyle}>Avaliações positivas</div>
+                <div style={valorStyle}>
+                  {m.feedback_pct_positivo}%
+                </div>
+                <div style={{ fontSize: 12, opacity: 0.7, marginTop: 4 }}>
+                  {m.feedback_positivos} de {m.feedback_avaliadas} avaliadas
+                </div>
+              </div>
+
+              <div style={cardStyle}>
+                <div style={labelStyle}>Avaliações negativas</div>
+                <div style={{ ...valorStyle, color: "#f08080" }}>
+                  {m.feedback_pct_negativo}%
+                </div>
+                <div style={{ fontSize: 12, opacity: 0.7, marginTop: 4 }}>
+                  {m.feedback_negativos} de {m.feedback_avaliadas} avaliadas
+                </div>
+              </div>
+
+              <div style={cardStyle}>
+                <div style={labelStyle}>Refatorações</div>
+                <div style={valorStyle}>{m.refatoracoes}</div>
+                <div style={{ fontSize: 12, opacity: 0.7, marginTop: 4 }}>
+                  respostas regeneradas pelo usuário
+                </div>
+              </div>
+            </div>
+
+            <h3 style={{ color: "#00adb5", fontFamily: "Poppins", marginBottom: 12 }}>
+              Outros números
+            </h3>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 16 }}>
+              <div style={cardStyle}>
+                <div style={labelStyle}>Total de conversas</div>
+                <div style={valorStyle}>{m.total_conversas}</div>
+              </div>
+              <div style={cardStyle}>
+                <div style={labelStyle}>Total de perguntas feitas</div>
+                <div style={valorStyle}>{m.total_perguntas}</div>
+              </div>
+            </div>
+          </>
         )}
       </div>
     </div>

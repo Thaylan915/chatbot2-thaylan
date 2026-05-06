@@ -170,25 +170,24 @@ class Command(BaseCommand):
         return chunks
 
     def _criar_cliente_embedding(self):
-        """Cria cliente Gemini para geração de embeddings."""
+        """Cria cliente Gemini (google.genai) para geração de embeddings."""
         try:
-            import google.generativeai as genai
+            from google import genai
             api_key = settings.GEMINI_API_KEY
             if not api_key:
                 self.stderr.write(self.style.WARNING("GEMINI_API_KEY não configurada."))
                 return None
-            genai.configure(api_key=api_key)
-            return genai
+            return genai.Client(api_key=api_key)
         except ImportError:
-            self.stderr.write(self.style.ERROR("google-generativeai não instalado."))
+            self.stderr.write(self.style.ERROR("google-genai não instalado."))
             return None
 
     def _gerar_embedding(self, client, texto: str) -> list[float] | None:
-        """Gera embedding para um texto via Gemini."""
+        """Gera embedding para um texto via Gemini (google.genai)."""
         try:
             model = settings.EMBEDDING_MODEL
-            result = client.embed_content(model=model, content=texto)
-            return result["embedding"]
+            result = client.models.embed_content(model=model, contents=texto)
+            return result.embeddings[0].values
         except Exception as e:
             self.stderr.write(f"     ⚠️  Erro ao gerar embedding: {e}")
             return None

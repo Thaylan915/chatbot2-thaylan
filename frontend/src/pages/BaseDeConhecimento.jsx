@@ -4,7 +4,7 @@ import ConhecimentoArea from "../components/ConhecimentoArea";
 export default function BaseDeConhecimento() {
   return (
     <div className="layout">
-      <Sidebar tipo={"admin"} />
+      <Sidebar />
       <ConhecimentoArea />
     </div>
   );

@@ -1,0 +1,43 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python -c ' *)",
+      "Bash(netstat -ano)",
+      "Bash(findstr :8000)",
+      "Bash(findstr LISTENING)",
+      "Bash(tasklist)",
+      "Bash(findstr python *)",
+      "Bash(python manage.py runserver 127.0.0.1:8000)",
+      "Bash(curl -s -X POST http://127.0.0.1:8000/api/chat/pergunta/ -H \"Content-Type: application/json; charset=utf-8\" --data-binary \"{\\\\\"question\\\\\": \\\\\"hello world\\\\\"}\")",
+      "PowerShell(Start-Process -FilePath \"python\" -ArgumentList \"manage.py\",\"runserver\",\"127.0.0.1:8000\" -WorkingDirectory \"C:\\\\Users\\\\User\\\\chatbot2\\\\Backend\" -WindowStyle Hidden -PassThru)",
+      "PowerShell(Invoke-WebRequest -Uri \"http://127.0.0.1:8000/api/chat/pergunta/\" -Method POST -ContentType \"application/json; charset=utf-8\" -Body '{\"question\": \"hello world\"}' -UseBasicParsing)",
+      "PowerShell($proc = Start-Process -FilePath \"python\" -ArgumentList \"manage.py\",\"runserver\",\"127.0.0.1:8000\" -WorkingDirectory \"C:\\\\Users\\\\User\\\\chatbot2\\\\Backend\" -RedirectStandardOutput \"C:\\\\Users\\\\User\\\\chatbot2\\\\django_out.log\" -RedirectStandardError \"C:\\\\Users\\\\User\\\\chatbot2\\\\django_err.log\" -PassThru -WindowStyle Hidden; $proc.Id; Start-Sleep -Seconds 5; if \\($proc.HasExited\\) { \"EXITED with code $\\($proc.ExitCode\\)\" } else { \"RUNNING\" })",
+      "PowerShell(Get-NetTCPConnection -LocalPort 8000 -State Listen -ErrorAction SilentlyContinue)",
+      "PowerShell($env:PYTHONIOENCODING=\"utf-8\"; cd C:\\\\Users\\\\User\\\\chatbot2\\\\Backend; python -c \"import django; django.setup\\(\\)\" 2>&1)",
+      "PowerShell($env:PYTHONIOENCODING=\"utf-8\"; $env:DJANGO_SETTINGS_MODULE=\"config.settings\"; cd C:\\\\Users\\\\User\\\\chatbot2\\\\Backend; python manage.py check 2>&1 | Select-Object -First 50)",
+      "PowerShell($env:PYTHONIOENCODING=\"utf-8\"; cd C:\\\\Users\\\\User\\\\chatbot2\\\\Backend; Start-Process -FilePath \"python\" -ArgumentList \"manage.py\",\"runserver\",\"127.0.0.1:8000\",\"--noreload\" -WorkingDirectory \"C:\\\\Users\\\\User\\\\chatbot2\\\\Backend\" -RedirectStandardOutput \"C:\\\\Users\\\\User\\\\chatbot2\\\\dj_out.log\" -RedirectStandardError \"C:\\\\Users\\\\User\\\\chatbot2\\\\dj_err.log\" -PassThru | Select-Object Id; Start-Sleep -Seconds 6)",
+      "PowerShell(Get-Content C:\\\\Users\\\\User\\\\chatbot2\\\\dj_err.log -Raw; \"---OUT---\"; Get-Content C:\\\\Users\\\\User\\\\chatbot2\\\\dj_out.log -Raw; \"---PORT---\"; \\(Test-NetConnection -ComputerName 127.0.0.1 -Port 8000 -WarningAction SilentlyContinue\\).TcpTestSucceeded)",
+      "PowerShell($env:PYTHONIOENCODING=\"utf-8\"; cd C:\\\\Users\\\\User\\\\chatbot2\\\\Backend; $job = Start-Job -ScriptBlock { Set-Location \"C:\\\\Users\\\\User\\\\chatbot2\\\\Backend\"; python manage.py runserver 127.0.0.1:8000 --noreload 2>&1 }; Start-Sleep -Seconds 6; Receive-Job $job; Stop-Job $job; Remove-Job $job -Force)",
+      "PowerShell(\\(Test-NetConnection -ComputerName 127.0.0.1 -Port 8000 -WarningAction SilentlyContinue\\).TcpTestSucceeded)",
+      "PowerShell($proc = Start-Process -FilePath \"cmd.exe\" -ArgumentList \"/c\",\"python manage.py runserver 127.0.0.1:8000 --noreload > C:\\\\Users\\\\User\\\\chatbot2\\\\dj.log 2>&1\" -WorkingDirectory \"C:\\\\Users\\\\User\\\\chatbot2\\\\Backend\" -PassThru -WindowStyle Hidden; $proc.Id; Start-Sleep -Seconds 6; \\(Test-NetConnection -ComputerName 127.0.0.1 -Port 8000 -WarningAction SilentlyContinue\\).TcpTestSucceeded)",
+      "PowerShell(Start-Sleep 6; \\(Test-NetConnection -ComputerName 127.0.0.1 -Port 8000 -WarningAction SilentlyContinue\\).TcpTestSucceeded; Get-Content \"C:\\\\Users\\\\User\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\C--Users-User-chatbot2\\\\01890b83-3045-4c71-a271-de1ab696b160\\\\tasks\\\\b140xq9ev.output\" -Raw -ErrorAction SilentlyContinue)",
+      "PowerShell(Start-Sleep 7; \\(Test-NetConnection -ComputerName 127.0.0.1 -Port 8000 -WarningAction SilentlyContinue\\).TcpTestSucceeded; Get-Content \"C:\\\\Users\\\\User\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\C--Users-User-chatbot2\\\\01890b83-3045-4c71-a271-de1ab696b160\\\\tasks\\\\bbzvtt6k1.output\" -Raw -ErrorAction SilentlyContinue)",
+      "Bash(xxd /c/Users/User/chatbot2/.env)",
+      "mcp__Claude_Preview__preview_start",
+      "Bash(python manage.py indexar_documentos --gerar-embeddings)",
+      "Bash(PYTHONIOENCODING=utf-8 python manage.py indexar_documentos --gerar-embeddings)",
+      "Bash(curl -s -X POST http://127.0.0.1:8000/api/chat/pergunta/ -H \"Content-Type: application/json; charset=utf-8\" --data-binary \"{\\\\\"question\\\\\": \\\\\"o que e uma portaria?\\\\\"}\")",
+      "Bash(curl -s http://127.0.0.1:8000/api/documents/)",
+      "Bash(curl -s -X POST http://127.0.0.1:8000/api/auth/login/ -H \"Content-Type: application/json\" -d '{\"username\":\"pedro\",\"password\":\"pedro123\"}')",
+      "Bash(curl -s -X POST http://127.0.0.1:8000/api/users/register/ -H \"Content-Type: application/json\" -d '{\"username\":\"a\",\"email\":\"aaaa@gmail.com\",\"password\":\"a\",\"password2\":\"a\"}')",
+      "Bash(pip install *)",
+      "Bash(curl -s -X POST http://127.0.0.1:8000/api/users/register/ -H \"Content-Type: application/json\" -d '{\"username\":\"novo_teste\",\"email\":\"novo@x.com\",\"password\":\"abc12345\",\"password2\":\"abc12345\"}')",
+      "Bash(curl -s -X POST http://127.0.0.1:8000/api/auth/login/ -H \"Content-Type: application/json\" -d '{\"username\":\"admin\",\"password\":\"admin\"}')",
+      "Bash(npm install *)",
+      "Bash(PYTHONIOENCODING=utf-8 python manage.py makemigrations documents)",
+      "Bash(PYTHONIOENCODING=utf-8 python manage.py migrate)",
+      "Bash(python -m json.tool)",
+      "Bash(python -c \"import pypdf; print\\('pypdf', pypdf.__version__\\)\")"
+    ]
+  }
+}

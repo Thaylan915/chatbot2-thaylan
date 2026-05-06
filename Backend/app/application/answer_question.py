@@ -1,8 +1,62 @@
 """Caso de uso: responder pergunta do usuário usando o banco de documentos."""
 import re
 import math
+import threading
+import numpy as np
 from django.conf import settings
 from Backend.app.documents.models import Conversa, Mensagem, ChunkDocumento
+
+# ─── Cache em memória dos embeddings ──────────────────────────────────────────
+# Carrega todos os embeddings 1x, mantém na memória do processo Django.
+# Invalidar com `_invalidate_embedding_cache()` quando documentos mudarem.
+_EMB_LOCK = threading.Lock()
+_EMB_CACHE = {
+    "matrix": None,           # numpy (N, D) já normalizada
+    "chunk_ids": None,        # list[int] alinhado com matrix
+    "count": 0,
+}
+
+
+def _invalidate_embedding_cache():
+    with _EMB_LOCK:
+        _EMB_CACHE["matrix"] = None
+        _EMB_CACHE["chunk_ids"] = None
+        _EMB_CACHE["count"] = 0
+
+
+def _carregar_cache_embeddings():
+    """Carrega (1x) todos os embeddings da versão ATIVA em uma matriz numpy normalizada."""
+    from django.db.models import Q
+    # Apenas chunks de versões ativas (ou legacy sem versão)
+    base_qs = ChunkDocumento.objects.exclude(embedding=None).filter(
+        Q(versao__ativa=True) | Q(versao__isnull=True)
+    )
+    with _EMB_LOCK:
+        # Se a contagem do banco mudou, recarrega
+        total_atual = base_qs.count()
+        if (
+            _EMB_CACHE["matrix"] is not None
+            and _EMB_CACHE["count"] == total_atual
+        ):
+            return _EMB_CACHE["matrix"], _EMB_CACHE["chunk_ids"]
+
+        chunks = list(base_qs.values_list("id", "embedding"))
+        if not chunks:
+            _EMB_CACHE["matrix"] = None
+            _EMB_CACHE["chunk_ids"] = []
+            _EMB_CACHE["count"] = 0
+            return None, []
+
+        ids = [cid for cid, _ in chunks]
+        matrix = np.asarray([emb for _, emb in chunks], dtype=np.float32)
+        norms = np.linalg.norm(matrix, axis=1, keepdims=True)
+        norms[norms == 0] = 1.0
+        matrix = matrix / norms  # normaliza para virar dot product = cos sim
+
+        _EMB_CACHE["matrix"] = matrix
+        _EMB_CACHE["chunk_ids"] = ids
+        _EMB_CACHE["count"] = total_atual
+        return matrix, ids
 
 
 def preprocessar_pergunta(texto: str) -> str:
@@ -43,10 +97,7 @@ def _cosseno(a, b):
 def _embeddar(texto: str):
     """Gera embedding usando google.genai."""
     from google import genai
-    client = genai.Client(
-        api_key=settings.GEMINI_API_KEY,
-        http_options={"api_version": "v1"},
-    )
+    client = genai.Client(api_key=settings.GEMINI_API_KEY)
     result = client.models.embed_content(
         model=settings.EMBEDDING_MODEL,
         contents=texto,
@@ -55,16 +106,28 @@ def _embeddar(texto: str):
 
 
 def _buscar_chunks(embedding_pergunta, top_k: int):
-    """Busca os chunks mais relevantes por similaridade de cosseno."""
-    chunks = ChunkDocumento.objects.exclude(embedding=None).select_related("documento")
-    scored = []
-    for chunk in chunks:
-        if not chunk.embedding:
-            continue
-        sim = _cosseno(embedding_pergunta, chunk.embedding)
-        scored.append((sim, chunk))
-    scored.sort(key=lambda x: x[0], reverse=True)
-    return [chunk for _, chunk in scored[:top_k]]
+    """Busca os chunks mais relevantes via produto escalar vetorizado (numpy)."""
+    matrix, ids = _carregar_cache_embeddings()
+    if matrix is None or len(ids) == 0:
+        return []
+
+    q = np.asarray(embedding_pergunta, dtype=np.float32)
+    q_norm = np.linalg.norm(q)
+    if q_norm == 0:
+        return []
+    q = q / q_norm
+
+    sims = matrix @ q  # (N,) — cosseno, pois ambos já normalizados
+    k = min(top_k, len(ids))
+    # argpartition para top-k em O(N), depois ordena só os k
+    top_idx = np.argpartition(-sims, k - 1)[:k]
+    top_idx = top_idx[np.argsort(-sims[top_idx])]
+    top_ids = [ids[i] for i in top_idx]
+
+    # Busca os chunks no banco preservando a ordem do ranking
+    chunks_qs = ChunkDocumento.objects.filter(id__in=top_ids).select_related("documento")
+    chunks_by_id = {c.id: c for c in chunks_qs}
+    return [chunks_by_id[cid] for cid in top_ids if cid in chunks_by_id]
 
 
 def gerar_resposta(pergunta_processada: str) -> str:
@@ -96,10 +159,7 @@ def gerar_resposta(pergunta_processada: str) -> str:
             )
 
         from google import genai
-        client = genai.Client(
-            api_key=settings.GEMINI_API_KEY,
-            http_options={"api_version": "v1"},
-        )
+        client = genai.Client(api_key=settings.GEMINI_API_KEY)
         response = client.models.generate_content(
             model=settings.CHAT_MODEL,
             contents=prompt,

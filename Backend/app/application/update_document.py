@@ -1,15 +1,16 @@
 """
-Caso de uso: editar um documento existente.
-Permite atualizar nome, tipo e/ou substituir o arquivo no Gemini.
+Caso de uso: editar um documento.
+- Se um novo arquivo for enviado: cria uma nova versão (ativa por padrão).
+- Caso contrário: atualiza apenas os metadados da versão ativa.
 """
-
-import tempfile
-import os
-
-import google.generativeai as genai
-from django.conf import settings
-
 from Backend.app.domain.repositories.document_repository import DocumentRepository
+from Backend.app.documents.models import Documento, VersaoDocumento
+from Backend.app.application.document_versioning import (
+    salvar_arquivo_no_disco,
+    extrair_chunks_do_pdf,
+    gerar_embeddings,
+    criar_versao,
+)
 
 TIPOS_VALIDOS = {"portaria", "resolucao", "rod"}
 
@@ -29,68 +30,72 @@ class UpdateDocument:
     ) -> dict:
         if not isinstance(id_documento, int) or id_documento <= 0:
             raise ValueError("ID do documento inválido.")
-
         if nome is not None and not nome.strip():
             raise ValueError("O campo 'nome' não pode ser vazio.")
-
         if tipo is not None and tipo not in TIPOS_VALIDOS:
             raise ValueError(f"Tipo inválido. Use um dos valores: {', '.join(TIPOS_VALIDOS)}.")
 
-        documento = self.repository.get_by_id(id_documento)
-        if documento is None:
+        try:
+            documento = Documento.objects.get(id=id_documento)
+        except Documento.DoesNotExist:
             raise LookupError(f"Documento com ID {id_documento} não encontrado.")
 
-        campos = {}
-
-        if nome is not None:
-            campos["nome"] = nome.strip()
-
-        if tipo is not None:
-            campos["tipo"] = tipo
+        novo_nome = nome.strip() if nome else documento.nome
+        novo_tipo = tipo or documento.tipo
 
         if conteudo_arquivo:
-            api_key = settings.GEMINI_API_KEY
-            if not api_key:
-                raise RuntimeError("GEMINI_API_KEY não configurada.")
-
-            genai.configure(api_key=api_key)
-
-            uri_antigo = documento.caminho_arquivo
-            novo_uri = self._substituir_arquivo_gemini(
-                conteudo_arquivo, nome_arquivo or "documento", campos.get("nome", documento.nome)
+            # Novo arquivo → nova versão
+            caminho = salvar_arquivo_no_disco(
+                conteudo_arquivo, nome_arquivo or f"{novo_nome}.pdf", novo_tipo
             )
-            campos["caminho_arquivo"] = novo_uri
+            chunks_texto = extrair_chunks_do_pdf(caminho)
+            embeddings = gerar_embeddings(chunks_texto) if chunks_texto else []
+            versao = criar_versao(
+                documento=documento,
+                nome=novo_nome,
+                tipo=novo_tipo,
+                caminho_arquivo=caminho,
+                chunks_texto=chunks_texto,
+                embeddings=embeddings,
+                ativar=True,
+            )
+            return {
+                "id": documento.id,
+                "nome": documento.nome,
+                "tipo": documento.tipo,
+                "caminho_arquivo": documento.caminho_arquivo,
+                "versao_ativa": versao.numero,
+                "qtd_chunks": len(chunks_texto),
+                "criou_nova_versao": True,
+            }
 
-            self._remover_arquivo_gemini(uri_antigo)
-
-        if not campos:
+        # Sem arquivo: atualiza só metadados (na versão ativa e no Documento)
+        if nome is None and tipo is None:
             raise ValueError("Nenhum campo para atualizar foi fornecido.")
 
-        return self.repository.update(id_documento, campos)
+        ativa = VersaoDocumento.objects.filter(documento=documento, ativa=True).first()
+        if ativa:
+            campos_v = []
+            if nome is not None:
+                ativa.nome = novo_nome
+                campos_v.append("nome")
+            if tipo is not None:
+                ativa.tipo = novo_tipo
+                campos_v.append("tipo")
+            if campos_v:
+                ativa.save(update_fields=campos_v)
 
-    # ─── Helpers ──────────────────────────────────────────────────────────────
+        if nome is not None:
+            documento.nome = novo_nome
+        if tipo is not None:
+            documento.tipo = novo_tipo
+        documento.save(update_fields=["nome", "tipo", "atualizado_em"])
 
-    def _substituir_arquivo_gemini(
-        self, conteudo: bytes, nome_arquivo: str, display_name: str
-    ) -> str:
-        """Faz upload do novo arquivo no Gemini e retorna o URI."""
-        sufixo = os.path.splitext(nome_arquivo)[1] or ".pdf"
-        with tempfile.NamedTemporaryFile(suffix=sufixo, delete=False) as tmp:
-            tmp.write(conteudo)
-            tmp_path = tmp.name
-
-        try:
-            arquivo = genai.upload_file(path=tmp_path, display_name=display_name)
-            return arquivo.uri
-        finally:
-            os.unlink(tmp_path)
-
-    def _remover_arquivo_gemini(self, uri: str) -> None:
-        """Remove o arquivo antigo do Gemini a partir do URI armazenado."""
-        try:
-            # O nome do arquivo no Gemini é a última parte do URI (ex: files/abc123)
-            nome = "/".join(uri.rstrip("/").split("/")[-2:])
-            genai.delete_file(nome)
-        except Exception:
-            # Remoção é best-effort: não bloqueia a atualização se falhar
-            pass
+        return {
+            "id": documento.id,
+            "nome": documento.nome,
+            "tipo": documento.tipo,
+            "caminho_arquivo": documento.caminho_arquivo,
+            "versao_ativa": ativa.numero if ativa else None,
+            "criou_nova_versao": False,
+        }

@@ -7,10 +7,7 @@ from Backend.app.application.embedding_provider import EmbeddingProvider
 
 class GeminiEmbeddingProvider(EmbeddingProvider):
     def __init__(self):
-        self._client = genai.Client(
-            api_key=settings.GEMINI_API_KEY,
-            http_options={"api_version": "v1"},
-        )
+        self._client = genai.Client(api_key=settings.GEMINI_API_KEY)
         self._model = settings.EMBEDDING_MODEL
 
     def embed(self, text: str) -> List[float]:
