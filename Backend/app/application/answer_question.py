@@ -47,6 +47,10 @@ _MENSAGEM_ERRO_API = (
     "Não foi possível processar sua pergunta no momento. "
     "Verifique sua conexão e tente novamente."
 )
+_MENSAGEM_CLARIFICACAO = (
+    "Sua pergunta pode se referir a mais de um documento. "
+    "Para responder com precisão, por favor escolha o contexto desejado:"
+)
 _MENSAGEM_COTA_API = (
     "A cota da API Gemini foi excedida no momento. "
     "Aguarde alguns minutos e tente novamente."
@@ -72,8 +76,13 @@ _ALIAS_TERMINOS = {
 # Tamanho máximo do trecho de citação exibido no frontend
 _TRECHO_MAX_CHARS = 220
 
-# Cache simples em memória para reduzir chamadas repetidas ao serviço de embedding.
-_EMBEDDING_CACHE: dict[tuple[str, str, str], List[float]] = {}
+# Parâmetros de detecção de ambiguidade
+_AMBIG_TOP_N             = 3      # nº de candidatos inspecionados
+_AMBIG_SCORE_MIN         = 0.55   # mínimo de relevância do top-1 para considerar ambíguo
+_AMBIG_GAP_MAX           = 0.08   # diferença máxima de score entre top-1 e top-N
+_AMBIG_MIN_DOCS          = 2      # nº mínimo de documentos distintos nos top-N
+_AMBIG_MAX_OPCOES        = 4      # máximo de opções oferecidas ao usuário
+_AMBIG_TRECHO_CHARS      = 160    # tamanho do preview de cada opção
 
 
 # ─── Pré-processamento ────────────────────────────────────────────────────────
@@ -130,54 +139,105 @@ def _label_pagina(numero_pagina: Optional[int]) -> str:
     return f"Página {numero_pagina}" if numero_pagina else "Página N/A"
 
 
+# ─── Tratamento de cota da API e fallback textual ────────────────────────────
+
 def _is_quota_error(exc: Exception) -> bool:
     texto = str(exc).lower()
     return "quota exceeded" in texto or "resource_exhausted" in texto or "429" in texto
 
 
-def _tipo_documento_prioritario(pergunta: str) -> Optional[str]:
-    pergunta_normalizada = preprocessar_pergunta(pergunta)
-    tokens = set(re.findall(r"[\wáéíóúãõâêôç]+", pergunta_normalizada, flags=re.IGNORECASE))
+def _candidates_by_keyword(pergunta: str, fetch_k: int) -> List[dict]:
+    """Fallback semântico quando embedding está indisponível por cota."""
+    tokens = [
+        t for t in re.findall(r"[\wáéíóúãõâêôç]+", pergunta.lower(), flags=re.IGNORECASE)
+        if len(t) >= 3
+    ]
+    if not tokens:
+        return []
 
-    if "rod" in tokens:
-        return "rod"
-    if "resolucao" in tokens:
-        return "resolucao"
-    if "portaria" in tokens:
-        return "portaria"
-    return None
+    seen_ids = set()
+    candidatos: List[dict] = []
+
+    for token in tokens:
+        if len(candidatos) >= fetch_k:
+            break
+        chunks = (
+            ChunkDocumento.objects
+            .select_related("documento")
+            .filter(conteudo__icontains=token)
+            .exclude(id__in=seen_ids)
+            .order_by("id")[: max(1, fetch_k // max(1, len(tokens)))]
+        )
+        for c in chunks:
+            seen_ids.add(c.id)
+            score = 0.4 + min(0.5, len(token) / 20)
+            candidatos.append(
+                {
+                    "id": c.id,
+                    "conteudo": c.conteudo,
+                    "numero_pagina": c.numero_pagina,
+                    "documento_id": c.documento_id,
+                    "documento_nome": c.documento.nome,
+                    "score": float(score),
+                    "embedding": [],
+                }
+            )
+            if len(candidatos) >= fetch_k:
+                break
+
+    return candidatos
 
 
-def _priorizar_candidatos_por_tipo(candidates: List[dict], tipo_prioritario: Optional[str]) -> List[dict]:
-    if not tipo_prioritario:
-        return candidates
+# ─── Detecção de ambiguidade ─────────────────────────────────────────────────
 
-    candidatos_prioritarios = [c for c in candidates if c.get("documento_tipo") == tipo_prioritario]
-    if candidatos_prioritarios:
-        return sorted(candidatos_prioritarios, key=lambda item: item["score"], reverse=True)
+def _detectar_ambiguidade(candidates: List[dict]) -> List[dict]:
+    """
+    Detecta se os top candidatos sinalizam uma pergunta ambígua — isto é,
+    quando há múltiplos documentos distintos com scores comparáveis.
 
-    candidatos_ajustados: List[dict] = []
-    for candidate in candidates:
-        adjusted = dict(candidate)
-        adjusted["score"] = float(candidate["score"])
-        candidatos_ajustados.append(adjusted)
+    Critérios (todos devem ser satisfeitos):
+      1. Top-1 score >= _AMBIG_SCORE_MIN (existe relevância mínima)
+      2. Gap (top-1 − top-N) <= _AMBIG_GAP_MAX (scores próximos)
+      3. Top-N contém >= _AMBIG_MIN_DOCS documentos distintos
 
-    return sorted(candidatos_ajustados, key=lambda item: item["score"], reverse=True)
+    Retorna:
+      - Lista de opções de clarificação (uma por documento único), ordenadas
+        por relevância, limitada a _AMBIG_MAX_OPCOES.
+      - Lista vazia se a pergunta NÃO é ambígua.
+    """
+    if len(candidates) < _AMBIG_TOP_N:
+        return []
 
+    top = candidates[:_AMBIG_TOP_N]
+    top1_score = top[0]["score"]
+    topN_score = top[-1]["score"]
 
-def _obter_embedding_cacheado(
-    embedding_provider: EmbeddingProvider,
-    texto: str,
-    task_type: str,
-) -> List[float]:
-    chave = (
-        texto,
-        task_type,
-        getattr(settings, "EMBEDDING_MODEL", ""),
-    )
-    if chave not in _EMBEDDING_CACHE:
-        _EMBEDDING_CACHE[chave] = embedding_provider.embed(texto, task_type=task_type)
-    return _EMBEDDING_CACHE[chave]
+    if top1_score < _AMBIG_SCORE_MIN:
+        return []  # sem relevância → não é ambiguidade, é falta de resposta
+
+    if top1_score - topN_score > _AMBIG_GAP_MAX:
+        return []  # top-1 claramente melhor que os demais
+
+    docs_distintos = {c["documento_id"] for c in top}
+    if len(docs_distintos) < _AMBIG_MIN_DOCS:
+        return []  # todos do mesmo documento → pergunta clara
+
+    # Ambíguo: monta opções (uma por documento, preservando ordem de relevância)
+    opcoes: List[dict] = []
+    seen: set = set()
+    for c in candidates:
+        if c["documento_id"] in seen:
+            continue
+        seen.add(c["documento_id"])
+        opcoes.append({
+            "documento_id":   c["documento_id"],
+            "documento_nome": c["documento_nome"],
+            "numero_pagina":  c.get("numero_pagina"),
+            "trecho":         _extrair_trecho(c["conteudo"], max_chars=_AMBIG_TRECHO_CHARS),
+        })
+        if len(opcoes) >= _AMBIG_MAX_OPCOES:
+            break
+    return opcoes
 
 
 # ─── MMR (Maximal Marginal Relevance) re-ranking ─────────────────────────────
@@ -389,14 +449,21 @@ def _carregar_chunks_rods_para_definicao(limit: int = 8) -> List[dict]:
 
 class ResponderPergunta:
     """
-    Caso de uso: pipeline RAG completo com citações de origem.
+    Caso de uso: pipeline RAG completo com citações de origem e
+    tratamento de ambiguidade por confirmação do usuário.
 
     Fluxo:
         1. Gera embedding da pergunta com task_type='retrieval_query'.
         2. Busca os top RERANK_FETCH_K candidatos via pgvector.
-        3. Re-ranking MMR para selecionar TOP_K chunks diversos e relevantes.
-        4. Monta contexto rotulado (documento + página) e gera resposta via Gemini.
-        5. Retorna resposta + fontes + citacoes + respondida.
+        3. Se `documento_id_filtro` foi informado, restringe candidatos a esse
+           documento (usuário já confirmou o contexto) e pula a detecção de
+           ambiguidade.
+        4. Caso contrário, detecta ambiguidade — se positiva, retorna
+           intencao='clarificacao' com as opções de documentos.
+        5. Re-ranking MMR para selecionar TOP_K chunks diversos e relevantes.
+        6. Monta contexto rotulado (documento + página) e gera resposta.
+        7. Detecta se o modelo não encontrou resposta.
+        8. Retorna resposta + fontes + citacoes + respondida + intencao.
     """
 
     def __init__(
@@ -407,15 +474,24 @@ class ResponderPergunta:
         self._chunk_repo = chunk_repository
         self._embedding_provider = embedding_provider
 
-    def executar(self, pergunta_processada: str) -> dict:
+    def executar(
+        self,
+        pergunta_processada: str,
+        documento_id_filtro: Optional[int] = None,
+    ) -> dict:
         """
+        Args:
+            pergunta_processada: texto da pergunta já pré-processado.
+            documento_id_filtro: ID do documento escolhido pelo usuário após
+                                 clarificação (None no primeiro pedido).
+
         Retorna dict com:
-            - resposta:   str        — texto gerado pelo Gemini (ou mensagem de erro)
-            - fontes:     list[dict] — documentos únicos: {id, nome}
-            - citacoes:   list[dict] — trechos usados: {ordem, documento_id, documento_nome,
-                                        numero_pagina, trecho}
-            - respondida: bool       — True se o modelo encontrou resposta no contexto
-            - intencao:   str        — 'rag'
+            - resposta:              str
+            - fontes:                list[dict]  — {id, nome}
+            - citacoes:              list[dict]
+            - respondida:            bool
+            - intencao:              'rag' | 'clarificacao'
+            - opcoes_clarificacao:   list[dict] (apenas quando intencao='clarificacao')
         """
         if not settings.GEMINI_API_KEY:
             return self._sem_resposta(_MENSAGEM_ERRO_API)
@@ -438,17 +514,26 @@ class ResponderPergunta:
                 candidates = self._chunk_repo.buscar_candidatos(query_embedding, fetch_k)
                 candidates = _priorizar_candidatos_por_tipo(candidates, tipo_prioritario)
 
-            # 3. Re-ranking MMR
-            chunks = _mmr_rerank(candidates, top_k=top_k_contexto) if candidates else []
-
-            # 4. Monta contexto e gera resposta
-            if chunks:
-                contexto = _montar_contexto(chunks)
+            # 3. Se o usuário já escolheu um documento após clarificação,
+            #    restringe a busca e pula a detecção de ambiguidade.
+            if documento_id_filtro is not None:
+                candidates = [
+                    c for c in candidates
+                    if c["documento_id"] == documento_id_filtro
+                ]
+                if not candidates:
+                    return self._sem_resposta(_MENSAGEM_SEM_RESPOSTA)
             else:
-                contexto = (
-                    "Nenhum trecho relevante foi recuperado pela busca semântica. "
-                    "Responda de forma útil e transparente, sem inventar detalhes documentais."
-                )
+                # 4. Detecção de ambiguidade (só na primeira passagem)
+                opcoes = _detectar_ambiguidade(candidates)
+                if opcoes:
+                    return self._clarificacao(opcoes)
+
+            # 5. Re-ranking MMR
+            chunks = _mmr_rerank(candidates, top_k=settings.TOP_K)
+
+            # 6. Monta contexto e gera resposta
+            contexto = _montar_contexto(chunks)
             prompt = _PROMPT_TEMPLATE.format(
                 contexto=contexto,
                 pergunta=pergunta_processada,
@@ -475,18 +560,22 @@ class ResponderPergunta:
                 else:
                     return self._sem_resposta(_MENSAGEM_ERRO_API)
 
-            # 5. Monta fontes (documentos únicos) e citações (trechos individuais)
+            # 7. Detecta resposta vazia/negativa
+            if _nao_soube_responder(resposta_texto):
+                return self._sem_resposta(_MENSAGEM_SEM_RESPOSTA)
+
+            # 8. Monta fontes (documentos únicos) e citações (trechos individuais)
             fontes = self._deduplicar_fontes(chunks)
             citacoes = _construir_citacoes(chunks)
             documento_principal = _determinar_documento_principal(chunks)
 
             return {
-                "resposta":   resposta_texto,
-                "fontes":     fontes,
-                "citacoes":   citacoes,
-                "documento_principal": documento_principal,
-                "respondida": True,
-                "intencao":   "rag",
+                "resposta":            resposta_texto,
+                "fontes":              fontes,
+                "citacoes":            citacoes,
+                "respondida":          True,
+                "intencao":            "rag",
+                "opcoes_clarificacao": [],
             }
 
         except Exception as exc:
@@ -499,12 +588,23 @@ class ResponderPergunta:
     @staticmethod
     def _sem_resposta(mensagem: str) -> dict:
         return {
-            "resposta":   mensagem,
-            "fontes":     [],
-            "citacoes":   [],
-            "documento_principal": None,
-            "respondida": False,
-            "intencao":   "rag",
+            "resposta":            mensagem,
+            "fontes":              [],
+            "citacoes":            [],
+            "respondida":          False,
+            "intencao":            "rag",
+            "opcoes_clarificacao": [],
+        }
+
+    @staticmethod
+    def _clarificacao(opcoes: List[dict]) -> dict:
+        return {
+            "resposta":            _MENSAGEM_CLARIFICACAO,
+            "fontes":              [],
+            "citacoes":            [],
+            "respondida":          False,
+            "intencao":            "clarificacao",
+            "opcoes_clarificacao": opcoes,
         }
 
     @staticmethod

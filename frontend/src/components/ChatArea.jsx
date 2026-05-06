@@ -7,13 +7,13 @@ import api from "../services/api.jsx";
 import { authService } from "../services/authService";
 
 export default function ChatArea() {
-  const [mensagens, setMensagens] = useState([]);
-  const [input, setInput] = useState("");
+  const [mensagens, setMensagens]   = useState([]);
+  const [input, setInput]           = useState("");
   const [carregando, setCarregando] = useState(false);
   const [conversaId, setConversaId] = useState(null);
-  const [erroCarregamento, setErroCarregamento] = useState("");
-  const fimRef = useRef(null);
-  const location = useLocation();
+  const ultimaPerguntaRef           = useRef("");   // usada para reenviar após clarificação
+  const fimRef                      = useRef(null);
+  const location                    = useLocation();
 
   useEffect(() => {
     if (!authService.isAuthenticated()) {
@@ -66,18 +66,27 @@ export default function ChatArea() {
     fimRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [mensagens, carregando]);
 
-  async function enviar() {
-    const texto = input.trim();
-    
-    // ISSUE 1: VALIDAÇÃO DE ENTRADA DO USUÁRIO
-    if (texto.length < 2) {
-      alert("Por favor, digite uma pergunta válida com mais detalhes.");
-      return;
-    }
-    if (carregando) return;
+  /**
+   * Envia a pergunta para o backend.
+   *
+   * @param {string}  texto              — pergunta do usuário
+   * @param {object}  [opts]
+   * @param {number}  [opts.documentoIdFiltro] — ID do documento escolhido após
+   *                                              clarificação (omitir no 1º envio)
+   * @param {boolean} [opts.ecoarUsuario=true]  — se deve acrescentar a pergunta
+   *                                              como bolha do usuário (desligado
+   *                                              quando o usuário clica uma opção
+   *                                              de clarificação — a pergunta já
+   *                                              está no histórico)
+   */
+  async function enviarPergunta(texto, { documentoIdFiltro, ecoarUsuario = true } = {}) {
+    if (!texto || carregando) return;
 
-    setInput("");
-    setMensagens((prev) => [...prev, { role: "user", conteudo: texto }]);
+    ultimaPerguntaRef.current = texto;
+
+    if (ecoarUsuario) {
+      setMensagens((prev) => [...prev, { role: "user", conteudo: texto }]);
+    }
     setCarregando(true);
 
     try {
@@ -85,26 +94,28 @@ export default function ChatArea() {
       if (conversaId) {
         payload.conversa_id = conversaId;
       }
+      if (documentoIdFiltro != null) {
+        payload.documento_id_filtro = documentoIdFiltro;
+      }
 
       const res = await api.post("/api/chat/pergunta/", payload);
 
       if (!conversaId && res.data?.conversa_id) {
         setConversaId(res.data.conversa_id);
       }
-      
-      console.log("Resposta do servidor:", res.data); // <-- DEBUG: Pra gente ver o que chegou
 
       setMensagens((prev) => [
         ...prev,
         {
-          role:       "assistant",
-          id:         res.data.mensagem_id, // Issue 4 (ID para dar nota)
-          conteudo:   res.data.answer,
-          fontes:     res.data.fontes    ?? [],
-          citacoes:   res.data.citacoes  ?? [],
-          documentoPrincipal: res.data.documento_principal ?? null,
-          respondida: res.data.respondida,
-          avaliada:   false, 
+          role:               "assistant",
+          id:                 res.data.mensagem_id,             // necessário para feedback
+          conteudo:           res.data.answer,
+          fontes:             res.data.fontes              ?? [],
+          citacoes:           res.data.citacoes            ?? [],
+          respondida:         res.data.respondida,
+          intencao:           res.data.intencao            ?? "rag",
+          opcoesClarificacao: res.data.opcoes_clarificacao ?? [],
+          avaliada:           false,
         },
       ]);
     } catch (error) {
@@ -117,19 +128,48 @@ export default function ChatArea() {
       setMensagens((prev) => [
         ...prev,
         {
-          role:       "assistant",
-          conteudo:   error.response?.status === 401
-            ? "Sua sessão expirou. Faça login novamente para continuar."
-            : "Não foi possível conectar ao servidor. Tente novamente.",
-          fontes:     [],
-          citacoes:   [],
-          documentoPrincipal: null,
-          respondida: true,
+          role:               "assistant",
+          conteudo:           "Não foi possível conectar ao servidor. Tente novamente.",
+          fontes:             [],
+          citacoes:           [],
+          respondida:         false,
+          intencao:           "rag",
+          opcoesClarificacao: [],
         },
       ]);
     } finally {
       setCarregando(false);
     }
+  }
+
+  async function enviar() {
+    const texto = input.trim();
+    if (texto.length < 2) {
+      alert("Por favor, digite uma pergunta válida com mais detalhes.");
+      return;
+    }
+    setInput("");
+    await enviarPergunta(texto);
+  }
+
+  /**
+   * Usuário clicou numa opção de clarificação — reenvia a última pergunta
+   * restringindo a busca ao documento escolhido.
+   */
+  async function escolherContexto(documentoId, documentoNome) {
+    const texto = ultimaPerguntaRef.current;
+    if (!texto) return;
+
+    // Marca a escolha como uma bolha do usuário, para deixar claro no histórico
+    setMensagens((prev) => [
+      ...prev,
+      { role: "user", conteudo: `Consultar em: ${documentoNome}` },
+    ]);
+
+    await enviarPergunta(texto, {
+      documentoIdFiltro: documentoId,
+      ecoarUsuario:      false,
+    });
   }
 
   function handleKeyDown(e) {
@@ -166,9 +206,21 @@ export default function ChatArea() {
         ) : (
           <div className="listaMensagens">
             {mensagens.map((msg, i) => {
-              const semResposta = msg.role === "assistant" && msg.respondida === false;
+              const ehClarificacao =
+                msg.role === "assistant" && msg.intencao === "clarificacao";
+              const semResposta =
+                msg.role === "assistant" &&
+                msg.respondida === false &&
+                !ehClarificacao;
+
+              const classeExtra = ehClarificacao
+                ? " clarificacao"
+                : semResposta
+                ? " sem-resposta"
+                : "";
+
               return (
-                <div key={i} className={`bolha ${msg.role}${semResposta ? " sem-resposta" : ""}`}>
+                <div key={i} className={`bolha ${msg.role}${classeExtra}`}>
                   {semResposta && (
                     <div className="sem-resposta-header">
                       <span className="sem-resposta-icone">&#9888;</span>
@@ -176,7 +228,15 @@ export default function ChatArea() {
                     </div>
                   )}
 
-                  {/* ISSUE 2: MELHORIA DA FORMATAÇÃO (MARKDOWN) */}
+                  {ehClarificacao && (
+                    <div className="clarificacao-header">
+                      <span className="clarificacao-icone">&#10068;</span>
+                      <span className="clarificacao-titulo">
+                        Pergunta ambígua — confirme o contexto
+                      </span>
+                    </div>
+                  )}
+
                   <div className="textoBolha">
                     {msg.role === "assistant" ? (
                       <div className="markdownResposta">
@@ -197,6 +257,14 @@ export default function ChatArea() {
                       msg.conteudo
                     )}
                   </div>
+
+                  {ehClarificacao && msg.opcoesClarificacao?.length > 0 && (
+                    <OpcoesClarificacao
+                      opcoes={msg.opcoesClarificacao}
+                      onEscolher={escolherContexto}
+                      desabilitado={carregando}
+                    />
+                  )}
 
                   {msg.citacoes && msg.citacoes.length > 0 && (
                     <CitacoesArea citacoes={msg.citacoes} />
@@ -256,6 +324,31 @@ export default function ChatArea() {
         </div>
       </div>
     </div>
+  );
+}
+
+// ── Opções de clarificação (renderizadas quando a pergunta é ambígua) ──
+function OpcoesClarificacao({ opcoes, onEscolher, desabilitado }) {
+  return (
+    <ul className="opcoesClarificacao">
+      {opcoes.map((op) => (
+        <li key={op.documento_id}>
+          <button
+            className="opcaoClarificacao"
+            onClick={() => onEscolher(op.documento_id, op.documento_nome)}
+            disabled={desabilitado}
+          >
+            <div className="opcaoHeader">
+              <span className="opcaoDoc">{op.documento_nome}</span>
+              {op.numero_pagina && (
+                <span className="opcaoPagina">pág.&nbsp;{op.numero_pagina}</span>
+              )}
+            </div>
+            <div className="opcaoTrecho">"{op.trecho}"</div>
+          </button>
+        </li>
+      ))}
+    </ul>
   );
 }
 

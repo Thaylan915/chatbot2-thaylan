@@ -1,7 +1,9 @@
+from django.db.models import Count, Max
+
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import AllowAny, IsAuthenticated
 
 from Backend.app.application.answer_question import (
     iniciar_conversa,
@@ -42,13 +44,22 @@ class ChatIniciarView(APIView):
 class ChatPerguntaView(APIView):
     """
     POST /api/chat/pergunta/
-    Recebe uma pergunta, registra original e processada, retorna resposta. #35 #36 #37
+    Recebe uma pergunta, registra original e processada, retorna resposta.
+
+    Body JSON:
+        {
+            "conversa_id":          1,
+            "question":             "Qual o prazo?",
+            "documento_id_filtro":  5     # opcional — após o usuário escolher
+                                          # o contexto na tela de clarificação
+        }
     """
     permission_classes = [AllowAny]
 
     def post(self, request):
-        conversa_id = request.data.get("conversa_id")
-        question    = request.data.get("question", "").strip()
+        conversa_id          = request.data.get("conversa_id")
+        question             = request.data.get("question", "").strip()
+        documento_id_filtro  = request.data.get("documento_id_filtro")
 
         if not question:
             return Response(
@@ -94,6 +105,13 @@ class ChatPerguntaView(APIView):
                 status=status.HTTP_200_OK,
             )
 
+        # Normaliza o filtro (pode vir como string do front)
+        if documento_id_filtro is not None:
+            try:
+                documento_id_filtro = int(documento_id_filtro)
+            except (TypeError, ValueError):
+                documento_id_filtro = None
+
         # Busca conversa existente ou cria uma nova
         if conversa_id:
             try:
@@ -116,9 +134,11 @@ class ChatPerguntaView(APIView):
 
        # Gera e registra resposta via pipeline RAG
         responder = ChatFactory.make_responder()
-        resultado = responder.executar(mensagem.conteudo_processado)
-        
-        # 1. CAPTURE O RETORNO AQUI NESSA VARIÁVEL:
+        resultado = responder.executar(
+            mensagem.conteudo_processado,
+            documento_id_filtro=documento_id_filtro,
+        )
+        # Captura a Mensagem persistida para expor seu ID (necessário para o feedback)
         resposta_msg = registrar_resposta(
             conversa,
             resultado["resposta"],
@@ -136,6 +156,7 @@ class ChatPerguntaView(APIView):
                 "citacoes":             resultado["citacoes"],
                 "respondida":           resultado["respondida"],
                 "intencao":             resultado["intencao"],
+                "opcoes_clarificacao":  resultado.get("opcoes_clarificacao", []),
             },
             status=status.HTTP_200_OK,
         )
@@ -171,7 +192,75 @@ class ChatHistoricoView(APIView):
             }
             for m in mensagens
         ]
-        return Response({"conversa_id": conversa_id, "titulo": conversa.titulo, "mensagens": data})
+        return Response({
+            "conversa_id": conversa_id,
+            "titulo":      conversa.titulo,
+            "mensagens":   data,
+        })
+
+
+class ConversasUsuarioView(APIView):
+    """
+    GET /api/chat/conversas/
+    Lista todas as conversas do usuário autenticado, da mais recente para a
+    mais antiga. Usada para alimentar o histórico na sidebar.
+
+    Resposta:
+        {
+            "conversas": [
+                {
+                    "id":                 12,
+                    "iniciada_em":        "...",
+                    "ultima_atualizacao": "...",
+                    "total_mensagens":    8,
+                    "titulo":             "Qual o prazo de matrícula?"
+                },
+                ...
+            ]
+        }
+    """
+    permission_classes = [IsAuthenticated]
+
+    _TITULO_MAX_CHARS = 60
+
+    def get(self, request):
+        conversas = (
+            Conversa.objects
+            .filter(user=request.user)
+            .annotate(
+                ultima_atualizacao=Max("mensagens__criada_em"),
+                total_mensagens=Count("mensagens"),
+            )
+            .order_by("-iniciada_em")
+        )
+
+        data = []
+        for conv in conversas:
+            primeira = (
+                conv.mensagens
+                .filter(role="user")
+                .order_by("criada_em")
+                .first()
+            )
+            if primeira:
+                texto = primeira.conteudo_original.strip()
+                titulo = texto[: self._TITULO_MAX_CHARS]
+                if len(texto) > self._TITULO_MAX_CHARS:
+                    titulo += "…"
+            else:
+                titulo = "Nova conversa"
+
+            data.append({
+                "id":                 conv.id,
+                "iniciada_em":        conv.iniciada_em,
+                "ultima_atualizacao": conv.ultima_atualizacao,
+                "total_mensagens":    conv.total_mensagens,
+                "titulo":             titulo,
+            })
+
+        return Response({"conversas": data})
+
+
 class ChatHistoricoPeriodoView(APIView):
     permission_classes = [AllowAny] # Mude para IsAuthenticated se apenas admins puderem ver
 

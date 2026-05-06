@@ -2,7 +2,15 @@ from django.urls import path
 from rest_framework_simplejwt.views import TokenRefreshView
 
 from Backend.app.api.views.auth import LoginView
-from Backend.app.api.views.chat import ChatIniciarView, ChatPerguntaView, ChatHistoricoView, ChatHistoricoPeriodoView, MensagemFeedbackView, ChatMetricasView
+from Backend.app.api.views.chat import (
+    ChatIniciarView,
+    ChatPerguntaView,
+    ChatHistoricoView,
+    ChatHistoricoPeriodoView,
+    ConversasUsuarioView,
+    MensagemFeedbackView,
+    ChatMetricasView,
+)
 from Backend.app.api.views.documents import (
     DocumentListView,
     DocumentCreateView,
@@ -12,7 +20,6 @@ from Backend.app.api.views.documents import (
 )
 from Backend.app.api.views.admin_logs import AdminLogListView
 from Backend.app.api.views.users import UserListView, UserRoleUpdateView, MeView, UserRegisterView
-from Backend.app.api.views.chat import ChatHistoricoPeriodoView
 
 urlpatterns = [
     # Auth
@@ -20,12 +27,13 @@ urlpatterns = [
     path("auth/refresh/", TokenRefreshView.as_view(), name="token_refresh"),
 
     # Chat
-    path("chat/iniciar/",                        ChatIniciarView.as_view(),   name="chat_iniciar"),   # #34
-    path("chat/pergunta/",                       ChatPerguntaView.as_view(),  name="chat_pergunta"),  # #35 #36 #37
-    path("chat/<int:conversa_id>/historico/",    ChatHistoricoView.as_view(), name="chat_historico"),
-    path("chat/historico/periodo/", ChatHistoricoPeriodoView.as_view(), name="chat-historico-periodo"),
-    path("chat/mensagem/<int:mensagem_id>/feedback/", MensagemFeedbackView.as_view(), name="mensagem_feedback"),
-    path("chat/metricas/", ChatMetricasView.as_view(), name="chat_metricas"),
+    path("chat/iniciar/",                             ChatIniciarView.as_view(),         name="chat_iniciar"),    # #34
+    path("chat/pergunta/",                            ChatPerguntaView.as_view(),        name="chat_pergunta"),   # #35 #36 #37
+    path("chat/conversas/",                           ConversasUsuarioView.as_view(),    name="chat_conversas"),
+    path("chat/<int:conversa_id>/historico/",         ChatHistoricoView.as_view(),       name="chat_historico"),
+    path("chat/historico/periodo/",                   ChatHistoricoPeriodoView.as_view(), name="chat_historico_periodo"),
+    path("chat/mensagem/<int:mensagem_id>/feedback/", MensagemFeedbackView.as_view(),    name="mensagem_feedback"),
+    path("chat/metricas/",                            ChatMetricasView.as_view(),        name="chat_metricas"),
 
     # Documents
     path("documents/",                            DocumentListView.as_view(),          name="document_list"),
