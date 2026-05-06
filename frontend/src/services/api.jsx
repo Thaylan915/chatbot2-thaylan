@@ -18,9 +18,16 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      localStorage.removeItem("access_token");
-      localStorage.removeItem("refresh_token");
-      window.location.href = "/";
+      const failedUrl = error.config?.url || "";
+
+      // Redireciona apenas quando falha a autenticação em si.
+      // Requests protegidos como chat/histórico devem exibir erro local,
+      // sem derrubar a tela inteira de forma brusca.
+      if (failedUrl.includes("/api/token/")) {
+        localStorage.removeItem("access_token");
+        localStorage.removeItem("refresh_token");
+        window.location.href = "/";
+      }
     }
     return Promise.reject(error);
   }

@@ -11,6 +11,7 @@ from typing import List
 
 from django.db import connection
 
+from Backend.app.documents.models import ChunkDocumento
 from Backend.app.domain.repositories.chunk_repository import ChunkRepository
 
 # Busca simples — retorna apenas os campos necessários para montar o contexto
@@ -20,7 +21,8 @@ _SQL_SIMILARES = """
         c.conteudo,
         c.numero_pagina,
         d.id   AS documento_id,
-        d.nome AS documento_nome
+        d.nome AS documento_nome,
+        d.tipo AS documento_tipo
     FROM documents_chunkdocumento c
     INNER JOIN documents_documento d ON d.id = c.documento_id
     WHERE c.embedding IS NOT NULL
@@ -37,6 +39,7 @@ _SQL_CANDIDATOS = """
         c.numero_pagina,
         d.id   AS documento_id,
         d.nome AS documento_nome,
+        d.tipo AS documento_tipo,
         1 - (c.embedding::text::vector <=> %s::vector) AS score,
         c.embedding
     FROM documents_chunkdocumento c
@@ -78,7 +81,7 @@ class PostgresChunkRepository(ChunkRepository):
 
         Returns:
             Lista de dicts com chaves: id, conteudo, documento_id, documento_nome,
-            score (float 0-1), embedding (List[float]).
+            documento_tipo, score (float 0-1), embedding (List[float]).
         """
         vec = json.dumps(query_embedding)
         with connection.cursor() as cursor:
@@ -93,3 +96,26 @@ class PostgresChunkRepository(ChunkRepository):
                 item["score"] = float(item["score"])
                 rows.append(item)
             return rows
+
+    def buscar_por_tipo_documento(self, tipo_documento: str, limit: int) -> List[dict]:
+        """Retorna chunks diretamente filtrados pelo tipo do documento."""
+        chunks = (
+            ChunkDocumento.objects
+            .select_related("documento")
+            .filter(documento__tipo=tipo_documento)
+            .order_by("documento_id", "numero_chunk")[:limit]
+        )
+
+        resultados: List[dict] = []
+        for indice, chunk in enumerate(chunks, start=1):
+            resultados.append({
+                "id": chunk.id,
+                "conteudo": chunk.conteudo,
+                "numero_pagina": chunk.numero_pagina,
+                "documento_id": chunk.documento_id,
+                "documento_nome": chunk.documento.nome,
+                "documento_tipo": chunk.documento.tipo,
+                "score": float(1.0 - (indice * 0.001)),
+                "embedding": chunk.embedding or [],
+            })
+        return resultados

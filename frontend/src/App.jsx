@@ -6,7 +6,6 @@ import BaseDeConhecimento from "./pages/BaseDeConhecimento";
 import Metricas from "./pages/Metricas";
 import Historico from "./pages/Historico";
 import { authService } from "./services/authService";
-import Historico from "./pages/Historico";
 
 function RotaProtegida({ children }) {
   return authService.isAuthenticated() ? children : <Navigate to="/" replace />;

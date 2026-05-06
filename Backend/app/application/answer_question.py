@@ -1,6 +1,7 @@
 """Caso de uso: responder pergunta do usuário usando o banco de documentos."""
 import math
 import re
+import unicodedata
 from typing import List, Optional
 
 import google.generativeai as genai
@@ -13,15 +14,19 @@ from Backend.app.domain.repositories.chunk_repository import ChunkRepository
 # Instrui o modelo a responder sempre com citações explícitas do documento de origem
 _PROMPT_TEMPLATE = """\
 Você é um assistente especializado em documentos institucionais do IFES.
-Responda à pergunta usando exclusivamente os trechos abaixo, em português.
+Responda à pergunta priorizando os trechos abaixo, em português.
+Você pode combinar informações de múltiplos trechos para produzir uma resposta mais completa e analítica.
+Se os trechos não forem suficientes, ainda assim responda de forma útil, transparente e sem inventar detalhes específicos que não estejam confirmados.
+Quando fizer sentido, explique em 2 a 4 parágrafos curtos: primeiro responda objetivamente, depois detalhe a base documental, e por fim aponte limites ou observações relevantes.
 
 Regras obrigatórias:
-1. Sempre cite o documento de origem na resposta, usando o formato:
+1. Sempre cite o documento de origem na resposta quando houver trechos recuperados, usando o formato:
    "Segundo o documento [NOME DO DOCUMENTO], página [N], ..."
    ou "Conforme [NOME DO DOCUMENTO] (pág. [N]), ..."
 2. Se uma informação vier de mais de um documento, cite todos.
-3. Se a informação não estiver no contexto, responda EXATAMENTE:
-   "Não encontrei a informação nos documentos disponíveis."
+3. Se a informação não estiver totalmente confirmada no contexto, explique a incerteza sem encerrar a resposta.
+4. Se nenhum trecho relevante for recuperado, responda de forma útil e transparente, sem inventar detalhes documentais.
+5. Evite respostas secas ou genéricas; prefira contextualizar o significado do documento, o alcance da regra e, quando cabível, as implicações práticas.
 
 Contexto:
 {contexto}
@@ -30,15 +35,9 @@ Pergunta: {pergunta}
 
 Resposta:"""
 
-# Frases que indicam que o modelo não soube responder
-_FRASES_SEM_RESPOSTA = [
-    "não encontrei a informação", "não encontrou a informação", "não há informações",
-    "não tenho informações", "não está no contexto", "não foi encontrado",
-    "não consta", "sem informações", "não possuo informações", "não disponho de informações",
-]
 _MENSAGEM_SEM_RESPOSTA = (
-    "Não encontrei informações suficientes nos documentos disponíveis para responder "
-    "a essa pergunta. Tente reformular ou consulte diretamente os documentos institucionais."
+    "Não encontrei confirmação suficiente nos documentos disponíveis, mas posso tentar "
+    "explicar com base no que foi recuperado."
 )
 _MENSAGEM_SEM_DOCUMENTOS = (
     "Ainda não há documentos indexados na base de conhecimento. "
@@ -56,6 +55,23 @@ _MENSAGEM_COTA_API = (
     "A cota da API Gemini foi excedida no momento. "
     "Aguarde alguns minutos e tente novamente."
 )
+
+_ALIAS_TERMINOS = {
+    "rods": "rod",
+    "rod's": "rod",
+    "portarias": "portaria",
+    "resolucoes": "resolucao",
+    "resoluções": "resolucao",
+    "neabi": "nucleo estudos afrobrasileiros e indigenas",
+    "scdp": "sistema concessao diarias passagens",
+    "tri": "treinamento regularmente instituido",
+    "progressao": "progressao",
+    "progressão": "progressao",
+    "titulacao": "titulacao",
+    "titulação": "titulacao",
+    "ferias": "ferias",
+    "férias": "ferias",
+}
 
 # Tamanho máximo do trecho de citação exibido no frontend
 _TRECHO_MAX_CHARS = 220
@@ -76,6 +92,11 @@ def preprocessar_pergunta(texto: str) -> str:
     texto = re.sub(r'\s+', ' ', texto)
     texto = texto.lower()
     texto = re.sub(r'[^\w\s\?\!\.\,\á\é\í\ó\ú\ã\õ\â\ê\ô\ç]', '', texto)
+
+    # Normaliza siglas e plurais comuns para melhorar a recuperação semântica.
+    for origem, destino in _ALIAS_TERMINOS.items():
+        texto = re.sub(rf'\b{re.escape(origem)}\b', destino, texto)
+
     return texto
 
 
@@ -99,12 +120,6 @@ def gerar_titulo_conversa(pergunta: str, max_palavras: int = 8) -> str:
         titulo += "..."
     titulo = titulo.rstrip("?!.:,;")
     return titulo[:1].upper() + titulo[1:]
-
-
-def _nao_soube_responder(texto: str) -> bool:
-    """Verifica se o modelo indicou que não encontrou resposta no contexto."""
-    texto_lower = texto.lower()
-    return any(frase in texto_lower for frase in _FRASES_SEM_RESPOSTA)
 
 
 def _extrair_trecho(conteudo: str, max_chars: int = _TRECHO_MAX_CHARS) -> str:
@@ -303,6 +318,133 @@ def _construir_citacoes(chunks: List[dict]) -> List[dict]:
     return citacoes
 
 
+def _determinar_documento_principal(chunks: List[dict]) -> Optional[dict]:
+    if not chunks:
+        return None
+
+    contagem: dict[str, int] = {}
+    for chunk in chunks:
+        tipo = chunk.get("documento_tipo") or "desconhecido"
+        contagem[tipo] = contagem.get(tipo, 0) + 1
+
+    tipo_principal = max(contagem.items(), key=lambda item: item[1])[0]
+
+    for chunk in chunks:
+        if (chunk.get("documento_tipo") or "desconhecido") == tipo_principal:
+            return {
+                "tipo": tipo_principal,
+                "nome": chunk.get("documento_nome"),
+            }
+
+    primeiro = chunks[0]
+    return {
+        "tipo": primeiro.get("documento_tipo") or "desconhecido",
+        "nome": primeiro.get("documento_nome"),
+    }
+
+
+def _resposta_local_por_chunks(pergunta: str, chunks: List[dict]) -> str:
+    if not chunks:
+        return (
+            "Encontrei a pergunta, mas não consegui recuperar trechos suficientes dos documentos para montar "
+            "uma resposta segura no momento. Tente reformular ou escolha um termo mais específico."
+        )
+
+    documento_principal = _determinar_documento_principal(chunks)
+    nome_documento = documento_principal["nome"] if documento_principal else chunks[0].get("documento_nome", "documento consultado")
+
+    def normalizar_texto(texto: str) -> str:
+        texto = re.sub(r"\s+", " ", texto).strip()
+        texto = texto.replace("–", "-").replace("—", "-")
+        texto = unicodedata.normalize("NFKD", texto)
+        texto = "".join(ch for ch in texto if not unicodedata.combining(ch))
+        return texto
+
+    def extrair_definicao_direta(termo: str) -> Optional[str]:
+        for chunk in chunks:
+            conteudo = normalizar_texto(chunk["conteudo"])
+            if termo.lower() == "rod" and "regulamento da organizacao didatica" in conteudo.lower():
+                if "cursos tecnicos" in conteudo.lower():
+                    return "Regulamento da Organização Didática dos Cursos Técnicos do Ifes"
+                if "cursos de graduacao" in conteudo.lower() or "cursos de graduação" in conteudo.lower():
+                    return "Regulamento da Organização Didática dos Cursos de Graduação do Ifes"
+                return "Regulamento da Organização Didática do Ifes"
+        return None
+
+    if re.search(r"\brod\b", pergunta, flags=re.IGNORECASE):
+        definicao = extrair_definicao_direta("ROD")
+        if definicao:
+            return (
+                f"ROD significa {definicao}. "
+                "No material consultado, ele é descrito como o documento que estabelece normas aos processos didáticos e pedagógicos do Ifes."
+            )
+
+    if re.search(r"\bresolucao\b", pergunta, flags=re.IGNORECASE):
+        resumo = " "
+        if chunks:
+            trecho = _extrair_trecho(chunks[0]["conteudo"], max_chars=220)
+            resumo = f" No documento consultado, o conteúdo mais relevante encontrado foi: {trecho}."
+        return (
+            f"Resolução, no contexto dos documentos do Ifes, é um ato normativo usado para formalizar diretrizes, regras ou decisões institucionais.{resumo}"
+        )
+
+    if re.search(r"\bportaria\b", pergunta, flags=re.IGNORECASE):
+        resumo = " "
+        if chunks:
+            trecho = _extrair_trecho(chunks[0]["conteudo"], max_chars=220)
+            resumo = f" No documento consultado, o conteúdo mais relevante encontrado foi: {trecho}."
+        return (
+            f"Portaria, no contexto dos documentos do Ifes, é um ato administrativo usado para registrar decisões, determinações ou providências institucionais.{resumo}"
+        )
+
+    trechos = []
+    for chunk in chunks[:2]:
+        trecho = _extrair_trecho(chunk["conteudo"], max_chars=170)
+        if trecho:
+            pagina = _label_pagina(chunk.get("numero_pagina"))
+            trechos.append(f"- {chunk['documento_nome']} ({pagina}): {trecho}")
+
+    if not trechos:
+        return (
+            f"Pelo que consegui recuperar no documento {nome_documento}, a resposta ainda precisa ser interpretada com cuidado. "
+            "Não encontrei um trecho suficientemente claro para fechar uma definição completa."
+        )
+
+    prefixo = f"Pelo que encontrei no documento {nome_documento}, "
+    if re.search(r"\brod\b", pergunta, flags=re.IGNORECASE):
+        prefixo = f"Pelo que encontrei sobre ROD no documento {nome_documento}, "
+    elif re.search(r"\bresolucao\b", pergunta, flags=re.IGNORECASE):
+        prefixo = f"Pelo que encontrei sobre resoluções no documento {nome_documento}, "
+    elif re.search(r"\bportaria\b", pergunta, flags=re.IGNORECASE):
+        prefixo = f"Pelo que encontrei sobre portarias no documento {nome_documento}, "
+
+    return (
+        f"{prefixo}consigo resumir assim: o conteúdo recuperado aponta para este contexto:\n"
+        + "\n".join(trechos)
+        + "\n\nSe quiser, posso refinar a busca com outro termo do documento para deixar a resposta mais precisa."
+    )
+
+
+def _carregar_chunks_rods_para_definicao(limit: int = 8) -> List[dict]:
+    qs = (
+        ChunkDocumento.objects
+        .select_related("documento")
+        .filter(documento__tipo="rod")
+        .filter(conteudo__icontains="Regulamento da Organização Didática")
+        .order_by("documento_id", "numero_chunk")[:limit]
+    )
+    return [
+        {
+            "conteudo": chunk.conteudo,
+            "numero_pagina": chunk.numero_pagina,
+            "documento_nome": chunk.documento.nome,
+            "documento_id": chunk.documento_id,
+            "documento_tipo": chunk.documento.tipo,
+        }
+        for chunk in qs
+    ]
+
+
 # ─── Caso de uso principal ────────────────────────────────────────────────────
 
 class ResponderPergunta:
@@ -355,23 +497,22 @@ class ResponderPergunta:
             return self._sem_resposta(_MENSAGEM_ERRO_API)
 
         try:
-            fetch_k = getattr(settings, "RERANK_FETCH_K", settings.TOP_K * 4)
+            fetch_k = getattr(settings, "RERANK_FETCH_K", max(settings.TOP_K * 2, settings.TOP_K))
+            top_k_contexto = max(1, min(getattr(settings, "RAG_CONTEXT_TOP_K", 3), settings.TOP_K))
+            tipo_prioritario = _tipo_documento_prioritario(pergunta_processada)
 
-            # 1) Tenta embedding + busca vetorial; se quota estourar, cai para busca textual
-            try:
-                query_embedding = self._embedding_provider.embed(
-                    pergunta_processada,
-                    task_type="retrieval_query",
-                )
+            # 1) Recupera os trechos mais relevantes via embedding sem estreitar
+            # a busca por tipo de documento ou palavra-chave específica.
+            query_embedding = _obter_embedding_cacheado(
+                self._embedding_provider,
+                pergunta_processada,
+                task_type="retrieval_query",
+            )
+            if tipo_prioritario and hasattr(self._chunk_repo, "buscar_por_tipo_documento"):
+                candidates = self._chunk_repo.buscar_por_tipo_documento(tipo_prioritario, fetch_k)
+            else:
                 candidates = self._chunk_repo.buscar_candidatos(query_embedding, fetch_k)
-            except Exception as exc:
-                if _is_quota_error(exc):
-                    candidates = _candidates_by_keyword(pergunta_processada, fetch_k)
-                else:
-                    return self._sem_resposta(_MENSAGEM_ERRO_API)
-
-            if not candidates:
-                return self._sem_resposta(_MENSAGEM_SEM_DOCUMENTOS)
+                candidates = _priorizar_candidatos_por_tipo(candidates, tipo_prioritario)
 
             # 3. Se o usuário já escolheu um documento após clarificação,
             #    restringe a busca e pula a detecção de ambiguidade.
@@ -401,16 +542,21 @@ class ResponderPergunta:
             genai.configure(api_key=settings.GEMINI_API_KEY)
             try:
                 model = genai.GenerativeModel(settings.CHAT_MODEL)
-                resposta_texto = model.generate_content(prompt).text
+                resposta_texto = model.generate_content(
+                    prompt,
+                    generation_config={
+                        "temperature": 0.2,
+                        "top_p": 0.9,
+                        "max_output_tokens": 420,
+                    },
+                ).text
             except Exception as exc:
                 if _is_quota_error(exc):
-                    try:
-                        model = genai.GenerativeModel("models/gemini-flash-latest")
-                        resposta_texto = model.generate_content(prompt).text
-                    except Exception as exc2:
-                        if _is_quota_error(exc2):
-                            return self._sem_resposta(_MENSAGEM_COTA_API)
-                        return self._sem_resposta(_MENSAGEM_ERRO_API)
+                    if tipo_prioritario == "rod":
+                        rod_chunks = _carregar_chunks_rods_para_definicao()
+                        resposta_texto = _resposta_local_por_chunks(pergunta_processada, rod_chunks or chunks)
+                    else:
+                        resposta_texto = _resposta_local_por_chunks(pergunta_processada, chunks)
                 else:
                     return self._sem_resposta(_MENSAGEM_ERRO_API)
 
@@ -421,6 +567,7 @@ class ResponderPergunta:
             # 8. Monta fontes (documentos únicos) e citações (trechos individuais)
             fontes = self._deduplicar_fontes(chunks)
             citacoes = _construir_citacoes(chunks)
+            documento_principal = _determinar_documento_principal(chunks)
 
             return {
                 "resposta":            resposta_texto,

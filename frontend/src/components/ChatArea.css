@@ -67,6 +67,17 @@
   font-size: 22px;
 }
 
+.placeholderErro {
+  margin: 0;
+  padding: 10px 14px;
+  border-radius: 12px;
+  background: rgba(0, 173, 181, 0.12);
+  color: #00adb5;
+  font-size: 14px;
+  text-align: center;
+  max-width: 520px;
+}
+
 /* ── Lista de mensagens ──────────────────────────────────── */
 .listaMensagens {
   width: 100%;
@@ -103,6 +114,67 @@
 
 .textoBolha {
   white-space: pre-wrap;
+}
+
+.markdownResposta {
+  display: grid;
+  gap: 10px;
+}
+
+.markdownParagrafo {
+  margin: 0;
+}
+
+.markdownParagrafo + .markdownParagrafo {
+  margin-top: 2px;
+}
+
+.markdownLista {
+  margin: 0;
+  padding-left: 20px;
+  display: grid;
+  gap: 6px;
+}
+
+.markdownItem {
+  margin: 0;
+}
+
+.markdownNegrito {
+  color: #ffffff;
+}
+
+.markdownCitacao {
+  margin: 0;
+  padding: 10px 12px;
+  border-left: 3px solid #00adb5;
+  border-radius: 10px;
+  background: rgba(0, 173, 181, 0.08);
+  color: rgba(238, 238, 238, 0.92);
+}
+
+.documentoPrincipalArea {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.documentoPrincipalLabel {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #00adb5;
+  font-weight: 700;
+}
+
+.documentoPrincipalValor {
+  font-size: 13px;
+  color: #eeeeee;
+  font-weight: 600;
 }
 
 /* ── Fontes de origem ────────────────────────────────────── */
@@ -294,8 +366,8 @@
 .citacaoCard {
   background-color: rgba(0, 0, 0, 0.2);
   border-left: 3px solid #00adb5;
-  border-radius: 4px;
-  padding: 8px 12px;
+  border-radius: 10px;
+  padding: 10px 12px;
 }
 
 .citacaoHeader {
@@ -344,9 +416,9 @@
 .citacaoTrecho {
   margin: 0;
   font-size: 12px;
-  line-height: 1.5;
-  color: rgba(238, 238, 238, 0.7);
-  font-style: italic;
+  line-height: 1.55;
+  color: rgba(238, 238, 238, 0.82);
+  font-style: normal;
   border: none;
   padding: 0;
 }
