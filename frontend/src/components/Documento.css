@@ -85,7 +85,9 @@
   filter: invert(0);
 }
 
-.acao.reindexar img {
+.acao.reindexar img,
+.acao.editar img,
+.acao.versoes img {
   filter: invert(1);
 }
 

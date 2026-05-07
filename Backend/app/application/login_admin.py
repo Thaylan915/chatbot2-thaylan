@@ -17,14 +17,14 @@ class LoginAdmin:
         if usuario is None:
             raise PermissionError("Credenciais inválidas.")
 
-        if not usuario.is_staff:
-            raise PermissionError("Acesso restrito a administradores.")
-
         refresh = RefreshToken.for_user(usuario)
+        profile = getattr(usuario, "profile", None)
+        role = profile.role if profile else "user"
 
         return {
             "access": str(refresh.access_token),
             "refresh": str(refresh),
             "username": usuario.username,
             "email": usuario.email,
+            "role": role,
         }

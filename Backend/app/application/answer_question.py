@@ -1,6 +1,7 @@
 """Caso de uso: responder pergunta do usuário usando o banco de documentos."""
 import math
 import re
+import threading
 import unicodedata
 from typing import List, Optional
 
@@ -10,6 +11,19 @@ from django.conf import settings
 from Backend.app.application.embedding_provider import EmbeddingProvider
 from Backend.app.documents.models import Conversa, Mensagem, Documento, ChunkDocumento
 from Backend.app.domain.repositories.chunk_repository import ChunkRepository
+
+# ─── Cache em memória dos embeddings (compat com document_versioning) ────────
+# Mantido como stub que o pipeline novo pode invalidar quando documentos mudam.
+_EMB_LOCK = threading.Lock()
+_EMB_CACHE = {"matrix": None, "chunk_ids": None, "count": 0}
+
+
+def _invalidate_embedding_cache():
+    """Invalidação no-op: o pipeline ChunkRepository não usa cache local."""
+    with _EMB_LOCK:
+        _EMB_CACHE["matrix"] = None
+        _EMB_CACHE["chunk_ids"] = None
+        _EMB_CACHE["count"] = 0
 
 # Instrui o modelo a responder sempre com citações explícitas do documento de origem
 _PROMPT_TEMPLATE = """\
@@ -667,3 +681,18 @@ def registrar_resposta(
         documentos = Documento.objects.filter(id__in=ids_fontes)
         mensagem.fontes.set(documentos)
     return mensagem
+
+
+def gerar_resposta(pergunta_processada: str) -> str:
+    """
+    Wrapper de retro-compatibilidade para o pipeline RAG novo.
+    Usado por MensagemRegenerarView quando o usuário pede uma resposta nova.
+    Retorna apenas o texto; sem fontes/citações.
+    """
+    try:
+        from Backend.app.api.factories import ChatFactory
+        responder = ChatFactory.make_responder()
+        resultado = responder.executar(pergunta_processada)
+        return resultado.get("resposta", "")
+    except Exception as e:
+        return f"Erro ao gerar resposta: {e}"

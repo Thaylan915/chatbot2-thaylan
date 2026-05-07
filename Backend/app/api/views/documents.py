@@ -1,10 +1,13 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-from rest_framework.permissions import IsAuthenticated, IsAdminUser
+from rest_framework.permissions import IsAuthenticated
+from Backend.app.api.permissions import IsAdminProfile as IsAdminUser
 
 from Backend.app.api.factories import DocumentFactory
 from Backend.app.application.log_action import log_action
+from Backend.app.documents.models import Documento, VersaoDocumento
+from Backend.app.application.document_versioning import ativar_versao
 
 
 class DocumentListView(APIView):
@@ -160,6 +163,64 @@ class DocumentDeleteView(APIView):
             return Response({"error": str(e)}, status=status.HTTP_404_NOT_FOUND)
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+class DocumentVersoesView(APIView):
+    """
+    GET  /api/documents/<id>/versoes/         → lista versões
+    POST /api/documents/<id>/versoes/<n>/ativar/ → ativa uma versão específica
+    """
+    permission_classes = [IsAuthenticated, IsAdminUser]
+
+    def get(self, request, id_documento: int):
+        try:
+            doc = Documento.objects.get(id=id_documento)
+        except Documento.DoesNotExist:
+            return Response({"error": "Documento não encontrado."}, status=status.HTTP_404_NOT_FOUND)
+
+        versoes = doc.versoes.all().order_by("-numero")
+        data = [
+            {
+                "numero": v.numero,
+                "nome": v.nome,
+                "tipo": v.tipo,
+                "caminho_arquivo": v.caminho_arquivo,
+                "ativa": v.ativa,
+                "criada_em": v.criada_em,
+                "qtd_chunks": v.chunks.count(),
+            }
+            for v in versoes
+        ]
+        return Response({"versoes": data})
+
+
+class DocumentVersaoAtivarView(APIView):
+    """
+    POST /api/documents/<id>/versoes/<n>/ativar/  → ativa a versão de número n
+    """
+    permission_classes = [IsAuthenticated, IsAdminUser]
+
+    def post(self, request, id_documento: int, numero: int):
+        try:
+            versao = VersaoDocumento.objects.get(documento_id=id_documento, numero=numero)
+        except VersaoDocumento.DoesNotExist:
+            return Response({"error": "Versão não encontrada."}, status=status.HTTP_404_NOT_FOUND)
+
+        ativar_versao(versao)
+        log_action(
+            user=request.user,
+            action="UPDATE",
+            resource_type="document",
+            resource_id=id_documento,
+            resource_name=versao.documento.nome,
+            details=f"Versão ativa alterada para v{versao.numero}",
+        )
+        return Response({
+            "id_documento": id_documento,
+            "versao_ativa": versao.numero,
+            "nome": versao.nome,
+            "tipo": versao.tipo,
+        })
 
 
 class DocumentConfirmDeleteView(APIView):

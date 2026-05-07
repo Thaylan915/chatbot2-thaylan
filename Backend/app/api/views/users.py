@@ -1,7 +1,8 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-from rest_framework.permissions import IsAuthenticated, IsAdminUser, AllowAny
+from rest_framework.permissions import IsAuthenticated, AllowAny
+from Backend.app.api.permissions import IsAdminProfile as IsAdminUser
 from django.contrib.auth.models import User
 from Backend.app.application.manage_profile import (
     list_users_with_profiles,

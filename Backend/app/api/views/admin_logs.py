@@ -1,6 +1,7 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated, IsAdminUser
+from rest_framework.permissions import IsAuthenticated
+from Backend.app.api.permissions import IsAdminProfile as IsAdminUser
 
 from Backend.app.documents.models import AdminLog
 

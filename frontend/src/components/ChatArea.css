@@ -11,10 +11,9 @@
 /* ── Área de mensagens ───────────────────────────────────── */
 .mensagens {
   flex: 1;
+  min-height: 0; /* permite que o flex child encolha e role */
   overflow-y: auto;
   padding: 24px 20px 8px;
-  display: flex;
-  flex-direction: column;
   scrollbar-width: thin;
   scrollbar-color: #2a2b32 transparent;
 }
@@ -32,11 +31,15 @@
   flex: 1;
   display: flex;
   flex-direction: column;
-  justify-content: flex-end;
-  align-items: center;
   padding: 20px;
   overflow-y: auto;
   gap: 12px;
+}
+
+/* Empurra o conteúdo para o fim quando há poucas mensagens,
+   sem quebrar o scroll para cima quando há muitas. */
+.mensagens > :first-child {
+  margin-top: auto;
 }
 
 .mensagem {
@@ -59,6 +62,103 @@
   background-color: #4a5060;
   align-self: flex-start;
   border-bottom-left-radius: 4px;
+}
+
+/* Markdown dentro de respostas do assistente */
+.mensagem.assistant p {
+  margin: 0 0 8px 0;
+}
+.mensagem.assistant p:last-child {
+  margin-bottom: 0;
+}
+.mensagem.assistant ul,
+.mensagem.assistant ol {
+  margin: 4px 0 8px 0;
+  padding-left: 24px;
+}
+.mensagem.assistant li {
+  margin: 2px 0;
+}
+.mensagem.assistant strong {
+  font-weight: 700;
+}
+.mensagem.assistant em {
+  font-style: italic;
+}
+.mensagem.assistant code {
+  background-color: rgba(0, 0, 0, 0.3);
+  padding: 1px 5px;
+  border-radius: 4px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.92em;
+}
+.mensagem.assistant pre {
+  background-color: rgba(0, 0, 0, 0.4);
+  padding: 10px 12px;
+  border-radius: 8px;
+  overflow-x: auto;
+  margin: 6px 0;
+}
+.mensagem.assistant pre code {
+  background: none;
+  padding: 0;
+}
+.mensagem.assistant h1,
+.mensagem.assistant h2,
+.mensagem.assistant h3,
+.mensagem.assistant h4 {
+  margin: 8px 0 4px 0;
+  font-weight: 700;
+}
+.mensagem.assistant h1 { font-size: 1.25em; }
+.mensagem.assistant h2 { font-size: 1.15em; }
+.mensagem.assistant h3 { font-size: 1.08em; }
+.mensagem.assistant h4 { font-size: 1.02em; }
+.mensagem.assistant a {
+  color: #00d4dd;
+  text-decoration: underline;
+}
+.mensagem.assistant blockquote {
+  border-left: 3px solid #00adb5;
+  padding-left: 10px;
+  margin: 6px 0;
+  opacity: 0.9;
+}
+
+.acoesMsg {
+  display: flex;
+  gap: 4px;
+  margin-top: 8px;
+  padding-top: 6px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.btnAcao {
+  background: transparent;
+  border: 1px solid transparent;
+  color: #fff;
+  font-size: 14px;
+  padding: 3px 8px;
+  border-radius: 6px;
+  cursor: pointer;
+  opacity: 0.6;
+  transition: all 0.15s;
+}
+
+.btnAcao:hover {
+  opacity: 1;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.btnAcao:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.btnAcao.ativo {
+  opacity: 1;
+  background: rgba(0, 173, 181, 0.25);
+  border-color: #00adb5;
 }
 
 .placeholder h2 {

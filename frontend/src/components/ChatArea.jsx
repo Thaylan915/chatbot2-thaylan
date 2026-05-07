@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useLocation } from "react-router-dom";
-import ReactMarkdown from "react-markdown"; // <-- IMPORTAÇÃO DO MARKDOWN (Issue 2)
+import ReactMarkdown from "react-markdown";
 import "./ChatArea.css";
 import enviarIcon from "../assets/images/enviar.svg";
 import api from "../services/api.jsx";
@@ -9,6 +9,7 @@ import { authService } from "../services/authService";
 export default function ChatArea() {
   const [mensagens, setMensagens]   = useState([]);
   const [input, setInput]           = useState("");
+  const [erroCarregamento, setErroCarregamento] = useState("");
   const [carregando, setCarregando] = useState(false);
   const [conversaId, setConversaId] = useState(null);
   const ultimaPerguntaRef           = useRef("");   // usada para reenviar após clarificação
@@ -68,16 +69,6 @@ export default function ChatArea() {
 
   /**
    * Envia a pergunta para o backend.
-   *
-   * @param {string}  texto              — pergunta do usuário
-   * @param {object}  [opts]
-   * @param {number}  [opts.documentoIdFiltro] — ID do documento escolhido após
-   *                                              clarificação (omitir no 1º envio)
-   * @param {boolean} [opts.ecoarUsuario=true]  — se deve acrescentar a pergunta
-   *                                              como bolha do usuário (desligado
-   *                                              quando o usuário clica uma opção
-   *                                              de clarificação — a pergunta já
-   *                                              está no histórico)
    */
   async function enviarPergunta(texto, { documentoIdFiltro, ecoarUsuario = true } = {}) {
     if (!texto || carregando) return;
@@ -88,6 +79,8 @@ export default function ChatArea() {
       setMensagens((prev) => [...prev, { role: "user", conteudo: texto }]);
     }
     setCarregando(true);
+
+    const eraNova = !conversaId;
 
     try {
       const payload = { question: texto };
@@ -108,7 +101,7 @@ export default function ChatArea() {
         ...prev,
         {
           role:               "assistant",
-          id:                 res.data.mensagem_id,             // necessário para feedback
+          id:                 res.data.answer_id ?? res.data.mensagem_id,
           conteudo:           res.data.answer,
           fontes:             res.data.fontes              ?? [],
           citacoes:           res.data.citacoes            ?? [],
@@ -160,7 +153,6 @@ export default function ChatArea() {
     const texto = ultimaPerguntaRef.current;
     if (!texto) return;
 
-    // Marca a escolha como uma bolha do usuário, para deixar claro no histórico
     setMensagens((prev) => [
       ...prev,
       { role: "user", conteudo: `Consultar em: ${documentoNome}` },
@@ -170,6 +162,35 @@ export default function ChatArea() {
       documentoIdFiltro: documentoId,
       ecoarUsuario:      false,
     });
+  }
+
+  async function regenerar(msgId) {
+    if (!msgId || carregando) return;
+    setCarregando(true);
+    try {
+      const res = await api.post(`/api/chat/mensagens/${msgId}/regenerar/`);
+      setMensagens((prev) => [
+        ...prev,
+        {
+          role: "assistant",
+          id: res.data.id,
+          conteudo: res.data.answer,
+          fontes: [],
+          citacoes: [],
+          respondida: true,
+          intencao: "rag",
+          opcoesClarificacao: [],
+          avaliada: false,
+        },
+      ]);
+    } catch {
+      setMensagens((prev) => [
+        ...prev,
+        { role: "assistant", conteudo: "Erro ao regenerar resposta." },
+      ]);
+    } finally {
+      setCarregando(false);
+    }
   }
 
   function handleKeyDown(e) {

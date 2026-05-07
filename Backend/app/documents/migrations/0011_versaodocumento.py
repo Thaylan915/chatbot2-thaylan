@@ -1,0 +1,41 @@
+# Renumerada de 0006 para 0011 após merge.
+import django.db.models.deletion
+from django.db import migrations, models
+
+
+class Migration(migrations.Migration):
+
+    dependencies = [
+        ('documents', '0010_mensagem_feedback_mensagem_foi_reformulada'),
+    ]
+
+    operations = [
+        migrations.AlterUniqueTogether(
+            name='chunkdocumento',
+            unique_together=set(),
+        ),
+        migrations.CreateModel(
+            name='VersaoDocumento',
+            fields=[
+                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                ('numero', models.PositiveIntegerField()),
+                ('nome', models.CharField(max_length=512)),
+                ('tipo', models.CharField(choices=[('portaria', 'Portaria'), ('resolucao', 'Resolução'), ('rod', 'ROD')], default='portaria', max_length=20)),
+                ('caminho_arquivo', models.CharField(max_length=1024)),
+                ('ativa', models.BooleanField(default=False)),
+                ('criada_em', models.DateTimeField(auto_now_add=True)),
+                ('documento', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='versoes', to='documents.documento')),
+            ],
+            options={
+                'verbose_name': 'Versão de Documento',
+                'verbose_name_plural': 'Versões de Documentos',
+                'ordering': ['documento', '-numero'],
+                'unique_together': {('documento', 'numero')},
+            },
+        ),
+        migrations.AddField(
+            model_name='chunkdocumento',
+            name='versao',
+            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, related_name='chunks', to='documents.versaodocumento'),
+        ),
+    ]

@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import "./Sidebar.css";
 import logo from "../assets/images/logo_chatbot.svg";
 import hideSidebar from "../assets/images/hide-sidebar.svg";
@@ -7,53 +8,70 @@ import historico from "../assets/images/historico.svg";
 import basedeconhec from "../assets/images/basedeconhecimento.svg";
 import metricas from "../assets/images/metricas.svg";
 
-import { useLocation } from "react-router-dom";
-import { useNavigate } from "react-router-dom";
 import { authService } from "../services/authService";
 import api from "../services/api";
 
-export default function Sidebar({ tipo }) {
+export default function Sidebar({ refreshKey } = {}) {
   const navigate = useNavigate();
   const location = useLocation();
   const [usuario, setUsuario] = useState(null);
-  
-  // Estado para guardar o histórico real
-  const [conversasRecentes, setConversasRecentes] = useState([]);
+  const [conversas, setConversas] = useState([]);
 
   useEffect(() => {
     if (!authService.isAuthenticated()) {
       setUsuario(null);
-      setConversasRecentes([]);
+      setConversas([]);
       return;
     }
-
-    // Busca dados do usuário
     api.get("/api/users/me/")
       .then((res) => setUsuario(res.data))
       .catch(() => setUsuario(null));
-
-    // Busca o histórico de conversas
-    api.get("/api/chat/historico/periodo/")
-      .then((res) => {
-        if (res.data && res.data.conversas) {
-          setConversasRecentes(res.data.conversas);
-        }
-      })
-      .catch((err) => console.error("Erro ao buscar histórico:", err));
   }, []);
+
+  // Carrega conversas; recarrega quando refreshKey mudar (ex.: após enviar pergunta)
+  useEffect(() => {
+    if (!authService.isAuthenticated()) return;
+    api.get("/api/chat/conversas/")
+      .then((res) => setConversas(res.data?.conversas || []))
+      .catch(() => setConversas([]));
+  }, [refreshKey]);
 
   function handleLogout() {
     authService.logout();
     navigate("/");
   }
 
+  function handleNovoChat() {
+    navigate("/admin");
+  }
+
+  function handleSelecionar(id) {
+    navigate(`/admin?conversa=${id}`);
+  }
+
   const nomeExibido = usuario?.username || "...";
   const inicial = nomeExibido[0]?.toUpperCase() || "?";
+  const isAdmin = usuario?.role === "admin" || usuario?.is_staff === true;
 
-  // Formatar a data
-  const formatarData = (dataString) => {
-    const data = new Date(dataString);
-    return data.toLocaleDateString("pt-BR", { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+  const conversaAtivaId = (() => {
+    if (location.pathname !== "/admin") return null;
+    const id = new URLSearchParams(location.search).get("conversa");
+    return id ? Number(id) : null;
+  })();
+
+  const formatarData = (iso) => {
+    if (!iso) return "";
+    try {
+      const d = new Date(iso);
+      return d.toLocaleDateString("pt-BR", {
+        day: "2-digit",
+        month: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+    } catch {
+      return "";
+    }
   };
 
   return (
@@ -69,12 +87,12 @@ export default function Sidebar({ tipo }) {
       </div>
 
       <div className="menuTop">
-        <div className="item menu" onClick={() => navigate("/admin")}>
+        <div className="item menu" onClick={handleNovoChat}>
           <img src={novoChat} className="icon" alt="Novo Chat" />
           <span>Novo Chat</span>
         </div>
 
-        {tipo === "admin" && (
+        {isAdmin && (
           <>
             <div
               className="item menu"
@@ -105,29 +123,28 @@ export default function Sidebar({ tipo }) {
 
       <div className="chats">
         <div className="miniTitulo">Seus chats</div>
-        
-        {/* Renderiza os chats reais */}
-        {conversasRecentes.length > 0 ? (
-          conversasRecentes.map((conv) => (
-            <div 
-              key={conv.id} 
-              className="chatItem"
-              onClick={() => navigate(`/admin?conversa=${conv.id}`)} 
-              style={{
-                backgroundColor:
-                  location.pathname === "/admin" && new URLSearchParams(location.search).get("conversa") === String(conv.id)
-                    ? "rgba(255, 255, 255, 0.06)"
-                    : "transparent",
-              }}
-            >
-              {conv.titulo || `Chat ${formatarData(conv.iniciada_em)}`}
-            </div>
-          ))
-        ) : (
+        {conversas.length === 0 && (
           <div className="chatItem" style={{ opacity: 0.6, cursor: "default" }}>
             Nenhuma conversa ainda
           </div>
         )}
+        {conversas.map((c) => {
+          const ativo = c.id === conversaAtivaId;
+          return (
+            <div
+              key={c.id}
+              className={`chatItem${ativo ? " ativo" : ""}`}
+              onClick={() => handleSelecionar(c.id)}
+              title={c.titulo}
+              style={{
+                cursor: "pointer",
+                backgroundColor: ativo ? "rgba(255, 255, 255, 0.06)" : "transparent",
+              }}
+            >
+              {c.titulo || `Chat ${formatarData(c.iniciada_em)}`}
+            </div>
+          );
+        })}
       </div>
 
       <div className="perfil">
