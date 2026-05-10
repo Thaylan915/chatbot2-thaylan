@@ -99,6 +99,78 @@ _AMBIG_MAX_OPCOES        = 4      # máximo de opções oferecidas ao usuário
 _AMBIG_TRECHO_CHARS      = 160    # tamanho do preview de cada opção
 
 
+# ─── Helpers que estavam faltando (perdidos durante merge) ────────────────────
+
+# Cache simples de embeddings de query, por (texto, task_type), em memória
+_QUERY_EMBED_CACHE: dict = {}
+_QUERY_EMBED_LOCK = threading.Lock()
+
+
+def _obter_embedding_cacheado(provider: EmbeddingProvider, texto: str, task_type: str = "retrieval_query") -> List[float]:
+    """Retorna o embedding da pergunta, cacheado por processo."""
+    key = (texto, task_type)
+    with _QUERY_EMBED_LOCK:
+        cached = _QUERY_EMBED_CACHE.get(key)
+        if cached is not None:
+            return cached
+    emb = provider.embed(texto, task_type=task_type)
+    with _QUERY_EMBED_LOCK:
+        _QUERY_EMBED_CACHE[key] = emb
+        # mantém o cache pequeno para não vazar memória
+        if len(_QUERY_EMBED_CACHE) > 200:
+            _QUERY_EMBED_CACHE.pop(next(iter(_QUERY_EMBED_CACHE)))
+    return emb
+
+
+def _tipo_documento_prioritario(pergunta: str) -> Optional[str]:
+    """
+    Detecta se a pergunta menciona explicitamente um tipo de documento e
+    retorna 'portaria' | 'resolucao' | 'rod' | None.
+    """
+    p = pergunta.lower()
+    if re.search(r"\b(rod|rods|graduacao|graduação|tecnico|técnico)\b", p):
+        return "rod"
+    if re.search(r"\b(portaria|portarias)\b", p):
+        return "portaria"
+    if re.search(r"\b(resolu[cç][aã]o|resolu[cç][oõ]es|regimento|regulamento)\b", p):
+        return "resolucao"
+    return None
+
+
+def _priorizar_candidatos_por_tipo(candidates: List[dict], tipo_prioritario: Optional[str]) -> List[dict]:
+    """Reordena candidates colocando os do tipo prioritário primeiro (estável)."""
+    if not tipo_prioritario or not candidates:
+        return candidates
+    do_tipo = [c for c in candidates if c.get("documento_tipo") == tipo_prioritario]
+    outros = [c for c in candidates if c.get("documento_tipo") != tipo_prioritario]
+    return do_tipo + outros
+
+
+_PADROES_NAO_SOUBE = (
+    "não encontrei",
+    "nao encontrei",
+    "não há informação",
+    "nao ha informacao",
+    "não foi possível encontrar",
+    "nao foi possivel encontrar",
+    "não consta",
+    "nao consta",
+    "não tenho informação",
+    "nao tenho informacao",
+    "não disponho",
+    "nao disponho",
+    "fora do contexto",
+)
+
+
+def _nao_soube_responder(texto: str) -> bool:
+    """Heurística simples: identifica respostas onde o modelo declarou desconhecer."""
+    if not texto:
+        return True
+    t = texto.lower()
+    return any(p in t for p in _PADROES_NAO_SOUBE)
+
+
 # ─── Pré-processamento ────────────────────────────────────────────────────────
 
 def preprocessar_pergunta(texto: str) -> str:
@@ -528,8 +600,8 @@ class ResponderPergunta:
                 candidates = self._chunk_repo.buscar_candidatos(query_embedding, fetch_k)
                 candidates = _priorizar_candidatos_por_tipo(candidates, tipo_prioritario)
 
-            # 3. Se o usuário já escolheu um documento após clarificação,
-            #    restringe a busca e pula a detecção de ambiguidade.
+            # Filtro opcional por documento (mantido para retrocompatibilidade
+            # com o fluxo de clarificação, que hoje não é mais usado por padrão).
             if documento_id_filtro is not None:
                 candidates = [
                     c for c in candidates
@@ -537,11 +609,8 @@ class ResponderPergunta:
                 ]
                 if not candidates:
                     return self._sem_resposta(_MENSAGEM_SEM_RESPOSTA)
-            else:
-                # 4. Detecção de ambiguidade (só na primeira passagem)
-                opcoes = _detectar_ambiguidade(candidates)
-                if opcoes:
-                    return self._clarificacao(opcoes)
+            # Detecção de ambiguidade desativada — o modelo recebe os top chunks
+            # de todos os documentos e responde citando cada origem.
 
             # 5. Re-ranking MMR
             chunks = _mmr_rerank(candidates, top_k=settings.TOP_K)
@@ -561,7 +630,7 @@ class ResponderPergunta:
                     generation_config={
                         "temperature": 0.2,
                         "top_p": 0.9,
-                        "max_output_tokens": 420,
+                        "max_output_tokens": 2048,
                     },
                 ).text
             except Exception as exc:
