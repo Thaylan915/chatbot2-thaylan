@@ -37,6 +37,7 @@ urlpatterns = [
     path("chat/conversas/",                              ChatConversasView.as_view(),       name="chat_conversas"),
     path("chat/historico/periodo/",                      ChatHistoricoPeriodoView.as_view(),name="chat_historico_periodo"),
     path("chat/mensagens/<int:mensagem_id>/feedback/",   MensagemFeedbackView.as_view(),    name="chat_msg_feedback"),
+    path("chat/mensagem/<int:mensagem_id>/feedback/",    MensagemFeedbackView.as_view(),    name="chat_msg_feedback_singular"),
     path("chat/mensagens/<int:mensagem_id>/regenerar/",  MensagemRegenerarView.as_view(),   name="chat_msg_regenerar"),
     path("chat/metricas/",                               ChatMetricasView.as_view(),        name="chat_metricas"),
     path("chat/<int:conversa_id>/historico/",            ChatHistoricoView.as_view(),       name="chat_historico"),

@@ -81,6 +81,12 @@ REST_FRAMEWORK = {
     ),
 }
 
+from datetime import timedelta
+SIMPLE_JWT = {
+    "ACCESS_TOKEN_LIFETIME":  timedelta(hours=12),  # antes era 5 min (default)
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=7),
+}
+
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:5173",
     "http://localhost:3000",

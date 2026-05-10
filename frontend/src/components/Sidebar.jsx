@@ -42,7 +42,9 @@ export default function Sidebar({ refreshKey } = {}) {
   }
 
   function handleNovoChat() {
-    navigate("/admin");
+    // Usa um param "_novo" com timestamp para forçar `location.search` a mudar
+    // mesmo se o usuário já estiver em `/admin` (sem `?conversa=`).
+    navigate(`/admin?_novo=${Date.now()}`);
   }
 
   function handleSelecionar(id) {

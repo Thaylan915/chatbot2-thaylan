@@ -49,7 +49,9 @@
       "Bash(PYTHONIOENCODING=utf-8 python manage.py migrate documents 0004_conversa_mensagem --fake)",
       "Bash(PYTHONIOENCODING=utf-8 python manage.py migrate documents 0009_mensagem_respondida)",
       "Bash(PYTHONIOENCODING=utf-8 python manage.py migrate documents --fake)",
-      "Bash(PYTHONIOENCODING=utf-8 python manage.py showmigrations documents)"
+      "Bash(PYTHONIOENCODING=utf-8 python manage.py showmigrations documents)",
+      "Bash(curl -s -o /dev/null -w \"Backend HTTP %{http_code} \\(login\\)\\\\n\" -X POST http://127.0.0.1:8000/api/auth/login/ -H \"Content-Type: application/json\" -d '{\"username\":\"admin\",\"password\":\"admin\"}')",
+      "Bash(curl -s -o /dev/null -w \"Frontend HTTP %{http_code}\\\\n\" http://127.0.0.1:5173/)"
     ]
   }
 }
