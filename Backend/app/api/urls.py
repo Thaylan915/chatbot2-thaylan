@@ -13,7 +13,12 @@ from Backend.app.api.views.chat import (
     MensagemRegenerarView,
     ChatMetricasView,
 )
-from Backend.app.api.views.admin_chat import AdminConversasListView, AdminMetricsView
+from Backend.app.api.views.admin_chat import (
+    AdminConversasListView,
+    AdminMetricsView,
+    AdminMetricsByUserView,
+    AdminMetricsConsistencyView,
+)
 from Backend.app.api.views.documents import (
     DocumentListView,
     DocumentCreateView,
@@ -43,8 +48,10 @@ urlpatterns = [
     path("chat/<int:conversa_id>/historico/",            ChatHistoricoView.as_view(),       name="chat_historico"),
 
     # Admin (chatbot)
-    path("admin/conversas/", AdminConversasListView.as_view(), name="admin_conversas"),
-    path("admin/metrics/",   AdminMetricsView.as_view(),       name="admin_metrics"),
+    path("admin/conversas/",           AdminConversasListView.as_view(),     name="admin_conversas"),
+    path("admin/metrics/",             AdminMetricsView.as_view(),           name="admin_metrics"),
+    path("admin/metrics/usuarios/",    AdminMetricsByUserView.as_view(),     name="admin_metrics_usuarios"),
+    path("admin/metrics/constancia/",  AdminMetricsConsistencyView.as_view(),name="admin_metrics_constancia"),
 
     # Documents
     path("documents/",                            DocumentListView.as_view(),          name="document_list"),
