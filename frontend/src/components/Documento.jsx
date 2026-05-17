@@ -9,9 +9,9 @@ import historico from "../assets/images/historico.svg";
 import api from "../services/api";
 
 const TIPOS = [
-  { valor: "portaria", label: "Portaria" },
+  { valor: "portaria",  label: "Portaria" },
   { valor: "resolucao", label: "Resolução" },
-  { valor: "rod", label: "ROD" },
+  { valor: "rod",       label: "ROD" },
 ];
 
 function fmtDataHora(iso) {
@@ -36,25 +36,27 @@ export default function Documento({
   ultimaAtualizacao,
   status,
   tipoAtual,
+  versaoAtiva,    // #25
+  totalVersoes,   // #25
   onDelete,
   onEdit,
   onVersoesChange,
 }) {
-  const [confirmando, setConfirmando] = useState(false);
-  const [editando, setEditando]       = useState(false);
-  const [verVersoes, setVerVersoes]   = useState(false);
-  const [versoes, setVersoes]         = useState([]);
+  const [confirmando,    setConfirmando]    = useState(false);
+  const [editando,       setEditando]       = useState(false);
+  const [verVersoes,     setVerVersoes]     = useState(false);
+  const [versoes,        setVersoes]        = useState([]);
   const [loadingVersoes, setLoadingVersoes] = useState(false);
 
-  const [nomeEdit, setNomeEdit]       = useState(titulo || "");
-  const [tipoEdit, setTipoEdit]       = useState(tipoAtual || "portaria");
+  const [nomeEdit,    setNomeEdit]    = useState(titulo    || "");
+  const [tipoEdit,    setTipoEdit]    = useState(tipoAtual || "portaria");
   const [arquivoEdit, setArquivoEdit] = useState(null);
-  const [salvando, setSalvando]       = useState(false);
+  const [salvando,    setSalvando]    = useState(false);
 
   const iconeStatus = status === "pendente" ? pendente : verificado;
 
   function abrirEdicao() {
-    setNomeEdit(titulo || "");
+    setNomeEdit(titulo    || "");
     setTipoEdit(tipoAtual || "portaria");
     setArquivoEdit(null);
     setEditando(true);
@@ -67,11 +69,7 @@ export default function Documento({
       const res = await api.get(`/api/documents/${id}/versoes/`);
       setVersoes(res.data?.versoes || []);
     } catch (e) {
-      alert(
-        e.response?.data?.error ||
-          e.response?.statusText ||
-          "Erro ao carregar versões"
-      );
+      alert(e.response?.data?.error || e.response?.statusText || "Erro ao carregar versões");
     } finally {
       setLoadingVersoes(false);
     }
@@ -84,26 +82,15 @@ export default function Documento({
       setVersoes(res.data?.versoes || []);
       onVersoesChange?.();
     } catch (e) {
-      alert(
-        e.response?.data?.error ||
-          e.response?.statusText ||
-          "Erro ao ativar versão"
-      );
+      alert(e.response?.data?.error || e.response?.statusText || "Erro ao ativar versão");
     }
   }
 
   async function handleSalvar() {
-    if (!nomeEdit.trim()) {
-      alert("O nome não pode ficar vazio.");
-      return;
-    }
+    if (!nomeEdit.trim()) { alert("O nome não pode ficar vazio."); return; }
     setSalvando(true);
     try {
-      await onEdit?.({
-        nome: nomeEdit.trim(),
-        tipo: tipoEdit,
-        arquivo: arquivoEdit,
-      });
+      await onEdit?.({ nome: nomeEdit.trim(), tipo: tipoEdit, arquivo: arquivoEdit });
       setEditando(false);
     } finally {
       setSalvando(false);
@@ -118,30 +105,29 @@ export default function Documento({
   return (
     <>
       <div className="documento">
+        {/* Ícone */}
         <div className="docIcon">
           <img src={doc} alt="Documento" />
         </div>
 
+        {/* Informações — #24 categoria/data, #25 versão ativa */}
         <div className="informacoes">
-          <h4>
-            {titulo}
-            {conteudo ? `: ${conteudo}` : ""}
-          </h4>
-
+          <h4>{titulo}{conteudo ? `: ${conteudo}` : ""}</h4>
           <div className="inferior">
-            <span>
-              {categoria} • {dataCriacao}
-            </span>
+            <span>{categoria} • {dataCriacao}</span>
             <span>Atualizado: {ultimaAtualizacao}</span>
+            {versaoAtiva != null && (
+              <span style={{ fontSize: 11, opacity: 0.65 }}>
+                v{versaoAtiva} ativa
+                {totalVersoes > 1 ? ` · ${totalVersoes} versões` : ""}
+              </span>
+            )}
           </div>
         </div>
 
+        {/* Ações */}
         <div className="interativo">
-          <div
-            className={`estado
-            ${status === "indexado" ? "indexado" : ""}
-            ${status === "pendente" ? "pendente" : ""}`}
-          >
+          <div className={`estado ${status === "indexado" ? "indexado" : ""} ${status === "pendente" ? "pendente" : ""}`}>
             <span>{status === "pendente" ? "Pendente" : "Indexado"}</span>
             <img src={iconeStatus} alt="Status" />
           </div>
@@ -165,73 +151,41 @@ export default function Documento({
         <div className="overlay">
           <div className="modal">
             <h2>Editar Documento</h2>
-
             <label>
               Nome
-              <input
-                type="text"
-                value={nomeEdit}
-                onChange={(e) => setNomeEdit(e.target.value)}
-              />
+              <input type="text" value={nomeEdit} onChange={(e) => setNomeEdit(e.target.value)} />
             </label>
-
             <label>
               Tipo
-              <select
-                value={tipoEdit}
-                onChange={(e) => setTipoEdit(e.target.value)}
-              >
+              <select value={tipoEdit} onChange={(e) => setTipoEdit(e.target.value)}>
                 {TIPOS.map((t) => (
-                  <option key={t.valor} value={t.valor}>
-                    {t.label}
-                  </option>
+                  <option key={t.valor} value={t.valor}>{t.label}</option>
                 ))}
               </select>
             </label>
-
             <label>
               Substituir arquivo PDF (opcional)
-              <input
-                type="file"
-                accept="application/pdf"
-                onChange={(e) => setArquivoEdit(e.target.files?.[0] || null)}
-              />
+              <input type="file" accept="application/pdf" onChange={(e) => setArquivoEdit(e.target.files?.[0] || null)} />
             </label>
             <p style={{ fontSize: 12, opacity: 0.7, margin: "4px 0 0 0" }}>
               Enviar um novo PDF cria uma nova versão automaticamente.
             </p>
-
             <div className="modalActions">
-              <button
-                className="btnVoltar"
-                onClick={() => setEditando(false)}
-                disabled={salvando}
-              >
-                Cancelar
-              </button>
-              <button
-                className="btnSalvar"
-                onClick={handleSalvar}
-                disabled={salvando}
-              >
-                {salvando ? "Salvando..." : "Salvar"}
-              </button>
+              <button className="btnVoltar" onClick={() => setEditando(false)} disabled={salvando}>Cancelar</button>
+              <button className="btnSalvar" onClick={handleSalvar} disabled={salvando}>{salvando ? "Salvando..." : "Salvar"}</button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Modal de versões */}
+      {/* Modal de versões — #25 */}
       {verVersoes && (
         <div className="overlay">
           <div className="modal" style={{ maxWidth: 640 }}>
             <h2>Versões — {titulo}</h2>
 
             {loadingVersoes && <p>Carregando...</p>}
-
-            {!loadingVersoes && versoes.length === 0 && (
-              <p>Nenhuma versão registrada.</p>
-            )}
+            {!loadingVersoes && versoes.length === 0 && <p>Nenhuma versão registrada.</p>}
 
             {!loadingVersoes && versoes.length > 0 && (
               <div style={{ maxHeight: 400, overflowY: "auto" }}>
@@ -250,15 +204,9 @@ export default function Documento({
                       <div style={{ flex: 1 }}>
                         <div style={{ fontWeight: 600 }}>
                           v{v.numero}
-                          {v.ativa && (
-                            <span style={{ color: "#00adb5", marginLeft: 8, fontSize: 12 }}>
-                              ● ATIVA
-                            </span>
-                          )}
+                          {v.ativa && <span style={{ color: "#00adb5", marginLeft: 8, fontSize: 12 }}>● ATIVA</span>}
                         </div>
-                        <div style={{ fontSize: 13, opacity: 0.85, marginTop: 4 }}>
-                          {v.nome}
-                        </div>
+                        <div style={{ fontSize: 13, opacity: 0.85, marginTop: 4 }}>{v.nome}</div>
                         <div style={{ fontSize: 11, opacity: 0.6, marginTop: 4 }}>
                           {fmtDataHora(v.criada_em)} · {v.qtd_chunks} chunks · {v.tipo}
                         </div>
@@ -279,9 +227,7 @@ export default function Documento({
             )}
 
             <div className="modalActions">
-              <button className="btnVoltar" onClick={() => setVerVersoes(false)}>
-                Fechar
-              </button>
+              <button className="btnVoltar" onClick={() => setVerVersoes(false)}>Fechar</button>
             </div>
           </div>
         </div>
@@ -293,16 +239,12 @@ export default function Documento({
           <div className="modal modalConfirmacao">
             <h2>Confirmar exclusão</h2>
             <p>
-              Tem certeza que deseja excluir o documento{" "}
-              <strong>{titulo}</strong>? Esta ação não pode ser desfeita.
+              Tem certeza que deseja excluir o documento <strong>{titulo}</strong>?
+              Esta ação não pode ser desfeita.
             </p>
             <div className="modalActions">
-              <button className="btnVoltar" onClick={() => setConfirmando(false)}>
-                Cancelar
-              </button>
-              <button className="btnExcluirConfirmar" onClick={handleConfirmar}>
-                Excluir
-              </button>
+              <button className="btnVoltar" onClick={() => setConfirmando(false)}>Cancelar</button>
+              <button className="btnExcluirConfirmar" onClick={handleConfirmar}>Excluir</button>
             </div>
           </div>
         </div>
