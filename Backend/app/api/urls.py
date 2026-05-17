@@ -1,5 +1,6 @@
 from django.urls import path
 from rest_framework_simplejwt.views import TokenRefreshView
+from Backend.app.api.views.categories import CategoryListView, CategoryDocumentListView
 
 from Backend.app.api.views.auth import LoginView
 from Backend.app.api.views.chat import (
@@ -61,6 +62,8 @@ urlpatterns = [
     path("documents/<int:id_documento>/confirm/", DocumentConfirmDeleteView.as_view(), name="document_confirm_delete"),
     path("documents/<int:id_documento>/versoes/", DocumentVersoesView.as_view(),       name="document_versoes"),
     path("documents/<int:id_documento>/versoes/<int:numero>/ativar/", DocumentVersaoAtivarView.as_view(), name="document_versao_ativar"),
+    path("categories/",          CategoryListView.as_view(),         name="category_list"),
+    path("categories/<str:tipo>/", CategoryDocumentListView.as_view(), name="category_documents"),
 
     # Admin Logs
     path("admin-logs/", AdminLogListView.as_view(), name="admin_logs"),

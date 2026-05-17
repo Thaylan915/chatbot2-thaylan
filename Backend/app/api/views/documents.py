@@ -15,7 +15,22 @@ class DocumentListView(APIView):
 
     def get(self, request):
         try:
-            documentos = DocumentFactory.make_list().executar()
+            tipo        = request.query_params.get("tipo") or None
+            data_inicio = request.query_params.get("data_inicio") or None
+            data_fim    = request.query_params.get("data_fim") or None
+
+            # Valida tipo se fornecido
+            if tipo and tipo not in ("portaria", "resolucao", "rod"):
+                return Response(
+                    {"error": "Tipo inválido. Use 'portaria', 'resolucao' ou 'rod'."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            documentos = DocumentFactory.make_list().executar(
+                tipo=tipo,
+                data_inicio=data_inicio,
+                data_fim=data_fim,
+            )
             return Response({"documentos": documentos}, status=status.HTTP_200_OK)
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

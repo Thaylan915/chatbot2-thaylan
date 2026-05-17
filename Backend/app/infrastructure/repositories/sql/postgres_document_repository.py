@@ -1,12 +1,10 @@
 """
-Implementação PostgreSQL do repositório de documentos.
-Repository Pattern — ConcreteRepository usando Django ORM + PostgreSQL.
+Implementação PostgreSQL do DocumentRepository.
+Resolve issues: #21 (categorias), #24 (origem/categoria/data), #25 (versões), #73 (filtros).
 """
 
-from django.db.models import Count, Q
-
 from Backend.app.domain.repositories.document_repository import DocumentRepository
-from Backend.app.documents.models import Documento, ChunkDocumento
+from Backend.app.documents.models import Documento
 
 
 class PostgresDocumentRepository(DocumentRepository):
@@ -17,79 +15,70 @@ class PostgresDocumentRepository(DocumentRepository):
         except Documento.DoesNotExist:
             return None
 
-    def delete(self, id_documento: int) -> bool:
-        documento = self.get_by_id(id_documento)
-
-        if documento is None:
-            return False
-
-        # Remove os chunks vinculados e depois o documento
-        # (cascade já está configurado no model, mas explicitamos por clareza)
-        ChunkDocumento.objects.filter(documento=documento).delete()
-        documento.delete()
-
-        return True
-
-    def list_all(self) -> list:
-        docs = (
-            Documento.objects
-            .annotate(
-                total_chunks=Count("chunks", distinct=True),
-                indexed_chunks=Count(
-                    "chunks",
-                    filter=Q(chunks__embedding__isnull=False),
-                    distinct=True,
-                ),
-            )
-            .values(
-                "id",
-                "nome",
-                "tipo",
-                "caminho_arquivo",
-                "indexado_em",
-                "atualizado_em",
-                "total_chunks",
-                "indexed_chunks",
-            )
-            .order_by("-atualizado_em")
-        )
-
-        resultado = []
-        for doc in docs:
-            status = "indexado" if doc["indexed_chunks"] > 0 else "pendente"
-            resultado.append({**doc, "status": status})
-        return resultado
-
-    def update(self, id_documento: int, campos: dict) -> dict | None:
-        documento = self.get_by_id(id_documento)
-        if documento is None:
-            return None
-
-        campos_permitidos = {"nome", "tipo", "caminho_arquivo"}
-        for campo, valor in campos.items():
-            if campo in campos_permitidos:
-                setattr(documento, campo, valor)
-
-        documento.save()
-
-        return {
-            "id": documento.id,
-            "nome": documento.nome,
-            "tipo": documento.tipo,
-            "caminho_arquivo": documento.caminho_arquivo,
-            "atualizado_em": documento.atualizado_em.isoformat(),
-        }
-
-    def save(self, nome: str, tipo: str, caminho_arquivo: str) -> dict:
-        doc = Documento.objects.create(
+    def create(self, nome: str, tipo: str, caminho_arquivo: str):
+        return Documento.objects.create(
             nome=nome,
             tipo=tipo,
             caminho_arquivo=caminho_arquivo,
         )
-        return {
-            "id": doc.id,
-            "nome": doc.nome,
-            "tipo": doc.tipo,
-            "caminho_arquivo": doc.caminho_arquivo,
-            "indexado_em": doc.indexado_em.isoformat(),
-        }
+
+    def update(self, id_documento: int, nome: str = None, tipo: str = None, caminho_arquivo: str = None):
+        doc = self.get_by_id(id_documento)
+        if not doc:
+            return None
+        if nome is not None:
+            doc.nome = nome
+        if tipo is not None:
+            doc.tipo = tipo
+        if caminho_arquivo is not None:
+            doc.caminho_arquivo = caminho_arquivo
+        doc.save()
+        return doc
+
+    def delete(self, id_documento: int) -> bool:
+        doc = self.get_by_id(id_documento)
+        if not doc:
+            return False
+        doc.chunks.all().delete()
+        doc.delete()
+        return True
+
+    def list_all(
+        self,
+        tipo: str = None,
+        data_inicio: str = None,
+        data_fim: str = None,
+    ) -> list:
+        qs = Documento.objects.prefetch_related("versoes", "chunks")
+
+        # #21 / #73 — filtro por categoria
+        if tipo:
+            qs = qs.filter(tipo=tipo)
+
+        # #73 — filtro por período
+        if data_inicio:
+            qs = qs.filter(indexado_em__date__gte=data_inicio)
+        if data_fim:
+            qs = qs.filter(indexado_em__date__lte=data_fim)
+
+        resultado = []
+        for doc in qs.order_by("tipo", "nome"):
+            versao_ativa = doc.versoes.filter(ativa=True).first()
+
+            resultado.append({
+                "id":           doc.id,
+                "nome":         doc.nome,
+                # #24 — categoria legível e tipo raw
+                "categoria":    doc.get_tipo_display(),
+                "tipo":         doc.tipo,
+                # #24 — origem do arquivo
+                "origem":       doc.caminho_arquivo,
+                # #24 — datas formatadas
+                "indexado_em":   doc.indexado_em.isoformat() if doc.indexado_em else None,
+                "atualizado_em": doc.atualizado_em.isoformat() if doc.atualizado_em else None,                # #25 — versão ativa
+                "versao_ativa":  versao_ativa.numero if versao_ativa else None,
+                "total_versoes": doc.versoes.count(),
+                "total_chunks":  doc.chunks.count(),
+            })
+
+        return resultado
