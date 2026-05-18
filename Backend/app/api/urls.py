@@ -1,5 +1,6 @@
 from django.urls import path
 from rest_framework_simplejwt.views import TokenRefreshView
+from Backend.app.api.views.categories import CategoryListView, CategoryDocumentListView
 
 from Backend.app.api.views.auth import LoginView
 from Backend.app.api.views.chat import (
