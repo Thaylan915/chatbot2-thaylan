@@ -117,6 +117,52 @@ export default function ConhecimentoArea() {
     }
   }
 
+  const [reindexando, setReindexando] = useState(false);
+  const [reindexandoId, setReindexandoId] = useState(null);
+
+  async function handleReindexarDocumento(id) {
+    setReindexandoId(id);
+    try {
+      const res = await api.post(`/api/documents/${id}/reindexar/`);
+      alert(
+        `Documento reindexado: ${res.data?.qtd_chunks ?? "?"} chunks na v${res.data?.versao_ativa ?? "?"}.`
+      );
+      carregar();
+    } catch (e) {
+      alert(
+        e.response?.data?.error ||
+          e.response?.statusText ||
+          "Erro ao reindexar documento"
+      );
+    } finally {
+      setReindexandoId(null);
+    }
+  }
+
+  async function handleReindexarBase() {
+    if (!confirm("Reindexar todos os documentos? Isso pode demorar alguns minutos.")) return;
+    setReindexando(true);
+    try {
+      const res = await api.post("/api/documents/reindexar/");
+      const r = res.data;
+      alert(
+        `Reindexação concluída.\n` +
+        `Documentos: ${r.total_documentos}\n` +
+        `Chunks gerados: ${r.total_chunks}\n` +
+        `Erros: ${r.erros}`
+      );
+      carregar();
+    } catch (e) {
+      alert(
+        e.response?.data?.error ||
+          e.response?.statusText ||
+          "Erro ao reindexar a base"
+      );
+    } finally {
+      setReindexando(false);
+    }
+  }
+
   async function handleExcluir(id) {
     try {
       const resSolicitar = await api.delete(`/api/documents/${id}/`);
@@ -177,10 +223,27 @@ export default function ConhecimentoArea() {
         <div className="listaDocumentos">
           <div className="headerDoc">
             <h2>Documentos</h2>
-            <button className="btnReindexar" onClick={carregar}>
-              <img src={recarregar} alt="Reindexar" />
-              Recarregar
-            </button>
+            <div style={{ display: "flex", gap: 8 }}>
+              <button
+                className="btnReindexar"
+                onClick={carregar}
+                disabled={reindexando}
+                title="Recarregar lista"
+              >
+                <img src={recarregar} alt="Recarregar" />
+                Recarregar
+              </button>
+              <button
+                className="btnReindexar"
+                onClick={handleReindexarBase}
+                disabled={reindexando}
+                title="Reindexa todos os documentos da base"
+                style={{ background: "#00adb5", color: "#fff" }}
+              >
+                <img src={recarregar} alt="Reindexar todos" />
+                {reindexando ? "Reindexando…" : "Reindexar todos"}
+              </button>
+            </div>
           </div>
 
           <div className="listaScroll">
@@ -202,8 +265,10 @@ export default function ConhecimentoArea() {
                 ultimaAtualizacao={formatarDataHora(d.indexado_em)}
                 status="indexado"
                 tipoAtual={d.tipo}
+                reindexando={reindexandoId === d.id}
                 onDelete={() => handleExcluir(d.id)}
                 onEdit={(payload) => handleEditar(d.id, payload)}
+                onReindex={() => handleReindexarDocumento(d.id)}
                 onVersoesChange={carregar}
               />
             ))}
