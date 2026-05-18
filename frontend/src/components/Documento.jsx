@@ -3,6 +3,7 @@ import { useState } from "react";
 import doc from "../assets/images/documento.svg";
 import verificado from "../assets/images/verificado.svg";
 import recarregar from "../assets/images/reload.svg";
+import editarIcon from "../assets/images/editar.svg";
 import lixeira from "../assets/images/lixo.svg";
 import pendente from "../assets/images/pendente.svg";
 import historico from "../assets/images/historico.svg";
@@ -36,10 +37,10 @@ export default function Documento({
   ultimaAtualizacao,
   status,
   tipoAtual,
-  versaoAtiva,    // #25
-  totalVersoes,   // #25
+  reindexando,
   onDelete,
   onEdit,
+  onReindex,
   onVersoesChange,
 }) {
   const [confirmando,    setConfirmando]    = useState(false);
@@ -136,8 +137,17 @@ export default function Documento({
             <img src={historico} alt="Versões" />
           </div>
 
+          <div
+            className="acao reindexar"
+            onClick={!reindexando && onReindex ? onReindex : undefined}
+            title={reindexando ? "Reindexando..." : "Reindexar documento"}
+            style={{ opacity: reindexando ? 0.4 : 1, cursor: reindexando ? "wait" : "pointer" }}
+          >
+            <img src={recarregar} alt="Reindexar" />
+          </div>
+
           <div className="acao editar" onClick={abrirEdicao} title="Editar">
-            <img src={recarregar} alt="Editar" />
+            <img src={editarIcon} alt="Editar" />
           </div>
 
           <div className="acao excluir" onClick={() => setConfirmando(true)} title="Excluir">

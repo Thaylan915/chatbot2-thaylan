@@ -146,6 +146,90 @@ def criar_versao(
 
 
 @transaction.atomic
+def regerar_chunks_documento(documento: Documento) -> dict:
+    """
+    Re-extrai chunks do PDF da versão ativa e gera embeddings novos.
+    Substitui os chunks atuais da versão ativa pelos novos.
+
+    Se o documento não tiver versão ativa (ex.: dados legados), cria v1.
+    """
+    versao = VersaoDocumento.objects.filter(documento=documento, ativa=True).first()
+
+    if versao is None:
+        chunks_texto = extrair_chunks_do_pdf(documento.caminho_arquivo)
+        embeddings = gerar_embeddings(chunks_texto) if chunks_texto else []
+        v = criar_versao(
+            documento=documento,
+            nome=documento.nome,
+            tipo=documento.tipo,
+            caminho_arquivo=documento.caminho_arquivo,
+            chunks_texto=chunks_texto,
+            embeddings=embeddings,
+            ativar=True,
+        )
+        return {
+            "documento_id": documento.id,
+            "versao_ativa": v.numero,
+            "qtd_chunks":   len(chunks_texto),
+            "criou_versao": True,
+        }
+
+    # Versão ativa existe → substitui seus chunks pelos novos
+    ChunkDocumento.objects.filter(documento=documento, versao=versao).delete()
+
+    chunks_texto = extrair_chunks_do_pdf(versao.caminho_arquivo)
+    embeddings = gerar_embeddings(chunks_texto) if chunks_texto else []
+    for i, (texto, emb) in enumerate(zip(chunks_texto, embeddings)):
+        ChunkDocumento.objects.create(
+            documento=documento,
+            versao=versao,
+            numero_chunk=i,
+            conteudo=texto,
+            embedding=emb,
+        )
+
+    try:
+        from Backend.app.application.answer_question import _invalidate_embedding_cache
+        _invalidate_embedding_cache()
+    except Exception:
+        pass
+
+    return {
+        "documento_id": documento.id,
+        "versao_ativa": versao.numero,
+        "qtd_chunks":   len(chunks_texto),
+        "criou_versao": False,
+    }
+
+
+def reindexar_base() -> dict:
+    """Roda regerar_chunks_documento em todos os documentos cadastrados."""
+    documentos = list(Documento.objects.all())
+    resultados = []
+    erros = 0
+    total_chunks = 0
+    for d in documentos:
+        try:
+            r = regerar_chunks_documento(d)
+            total_chunks += r.get("qtd_chunks", 0)
+            resultados.append({
+                "id": d.id, "nome": d.nome,
+                "qtd_chunks": r.get("qtd_chunks", 0),
+                "versao_ativa": r.get("versao_ativa"),
+                "ok": True,
+            })
+        except Exception as e:
+            erros += 1
+            resultados.append({"id": d.id, "nome": d.nome, "ok": False, "erro": str(e)})
+    return {
+        "total_documentos": len(documentos),
+        "total_chunks":     total_chunks,
+        "erros":            erros,
+        "resultados":       resultados,
+    }
+
+
+@transaction.atomic
 def ativar_versao(versao: VersaoDocumento) -> VersaoDocumento:
     """Marca a versão como ativa e desativa as outras do mesmo documento."""
     VersaoDocumento.objects.filter(documento=versao.documento).exclude(id=versao.id).update(ativa=False)

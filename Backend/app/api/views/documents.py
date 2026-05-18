@@ -7,7 +7,11 @@ from Backend.app.api.permissions import IsAdminProfile as IsAdminUser
 from Backend.app.api.factories import DocumentFactory
 from Backend.app.application.log_action import log_action
 from Backend.app.documents.models import Documento, VersaoDocumento
-from Backend.app.application.document_versioning import ativar_versao
+from Backend.app.application.document_versioning import (
+    ativar_versao,
+    regerar_chunks_documento,
+    reindexar_base,
+)
 
 
 class DocumentListView(APIView):
@@ -236,6 +240,64 @@ class DocumentVersaoAtivarView(APIView):
             "nome": versao.nome,
             "tipo": versao.tipo,
         })
+
+
+class DocumentReindexView(APIView):
+    """
+    POST /api/documents/<id>/reindexar/   — regera chunks da versão ativa.
+    """
+    permission_classes = [IsAuthenticated, IsAdminUser]
+
+    def post(self, request, id_documento: int):
+        try:
+            doc = Documento.objects.get(id=id_documento)
+        except Documento.DoesNotExist:
+            return Response({"error": "Documento não encontrado."}, status=status.HTTP_404_NOT_FOUND)
+
+        try:
+            resultado = regerar_chunks_documento(doc)
+            log_action(
+                user=request.user,
+                action="REINDEX",
+                resource_type="document",
+                resource_id=doc.id,
+                resource_name=doc.nome,
+                details=f"chunks regenerados: {resultado.get('qtd_chunks')}",
+            )
+            return Response({
+                "id":            doc.id,
+                "nome":          doc.nome,
+                "versao_ativa":  resultado.get("versao_ativa"),
+                "qtd_chunks":    resultado.get("qtd_chunks"),
+                "criou_versao":  resultado.get("criou_versao", False),
+            })
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+class DocumentReindexBaseView(APIView):
+    """
+    POST /api/documents/reindexar/   — reindexa TODOS os documentos da base.
+    """
+    permission_classes = [IsAuthenticated, IsAdminUser]
+
+    def post(self, request):
+        try:
+            resultado = reindexar_base()
+            log_action(
+                user=request.user,
+                action="REINDEX",
+                resource_type="base",
+                resource_name="todos",
+                details=(
+                    f"docs={resultado['total_documentos']} "
+                    f"chunks={resultado['total_chunks']} "
+                    f"erros={resultado['erros']}"
+                ),
+            )
+            return Response(resultado)
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 class DocumentConfirmDeleteView(APIView):

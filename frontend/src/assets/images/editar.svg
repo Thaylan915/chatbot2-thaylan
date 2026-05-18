@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="none" stroke="currentColor" stroke-width="28" stroke-linecap="round" stroke-linejoin="round">
+  <!-- Corpo do lápis -->
+  <path d="M104 360 L360 104 L440 184 L184 440 Z" />
+  <!-- Linha que separa a ponta de borracha -->
+  <path d="M320 144 L400 224" />
+  <!-- Ponta do lápis (triângulo) -->
+  <path d="M104 360 L72 472 L184 440" />
+  <!-- Risco da ponta -->
+  <path d="M104 408 L136 440" />
+</svg>

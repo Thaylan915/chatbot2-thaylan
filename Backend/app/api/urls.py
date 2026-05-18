@@ -28,6 +28,8 @@ from Backend.app.api.views.documents import (
     DocumentConfirmDeleteView,
     DocumentVersoesView,
     DocumentVersaoAtivarView,
+    DocumentReindexView,
+    DocumentReindexBaseView,
 )
 from Backend.app.api.views.admin_logs import AdminLogListView
 from Backend.app.api.views.users import UserListView, UserRoleUpdateView, MeView, UserRegisterView
@@ -62,8 +64,8 @@ urlpatterns = [
     path("documents/<int:id_documento>/confirm/", DocumentConfirmDeleteView.as_view(), name="document_confirm_delete"),
     path("documents/<int:id_documento>/versoes/", DocumentVersoesView.as_view(),       name="document_versoes"),
     path("documents/<int:id_documento>/versoes/<int:numero>/ativar/", DocumentVersaoAtivarView.as_view(), name="document_versao_ativar"),
-    path("categories/",          CategoryListView.as_view(),         name="category_list"),
-    path("categories/<str:tipo>/", CategoryDocumentListView.as_view(), name="category_documents"),
+    path("documents/reindexar/",                  DocumentReindexBaseView.as_view(),  name="document_reindex_base"),
+    path("documents/<int:id_documento>/reindexar/", DocumentReindexView.as_view(),   name="document_reindex"),
 
     # Admin Logs
     path("admin-logs/", AdminLogListView.as_view(), name="admin_logs"),
