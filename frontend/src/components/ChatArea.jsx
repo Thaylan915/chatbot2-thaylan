@@ -300,16 +300,34 @@ export default function ChatArea() {
                     </div>
                   )}
 
-                  {/* ISSUE 4: BOTÕES DE AVALIAÇÃO */}
+                  {/* Botões de avaliação */}
                   {msg.role === "assistant" && msg.id && !semResposta && !msg.avaliada && (
                     <div className="feedbackArea">
                       <span className="feedbackPergunta">A resposta foi útil?</span>
                       <button onClick={() => enviarFeedback(i, msg.id, 1)} title="Sim">👍</button>
                       <button onClick={() => enviarFeedback(i, msg.id, -1)} title="Não">👎</button>
+                      <button
+                        onClick={() => regenerar(msg.id)}
+                        title="Reformular resposta"
+                        disabled={carregando}
+                        style={{ marginLeft: 8 }}
+                      >
+                        🔄 Reformular
+                      </button>
                     </div>
                   )}
-                  {msg.avaliada && (
-                     <div className="feedbackArea"><span className="feedbackObrigado">Obrigado pelo feedback! ✓</span></div>
+                  {msg.avaliada && msg.role === "assistant" && msg.id && !semResposta && (
+                    <div className="feedbackArea">
+                      <span className="feedbackObrigado">Obrigado pelo feedback! ✓</span>
+                      <button
+                        onClick={() => regenerar(msg.id)}
+                        title="Reformular resposta"
+                        disabled={carregando}
+                        style={{ marginLeft: 8 }}
+                      >
+                        🔄 Reformular
+                      </button>
+                    </div>
                   )}
                 </div>
               );
