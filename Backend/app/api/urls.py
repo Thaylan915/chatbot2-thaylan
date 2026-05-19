@@ -28,8 +28,8 @@ from Backend.app.api.views.documents import (
     DocumentConfirmDeleteView,
     DocumentVersoesView,
     DocumentVersaoAtivarView,
-    DocumentReindexView,
-    DocumentReindexBaseView,
+    DocumentMetadataView,       # NOVO
+    DocumentAdminActionView,    # NOVO
 )
 from Backend.app.api.views.admin_logs import AdminLogListView
 from Backend.app.api.views.users import UserListView, UserRoleUpdateView, MeView, UserRegisterView
@@ -57,15 +57,20 @@ urlpatterns = [
     path("admin/metrics/constancia/",  AdminMetricsConsistencyView.as_view(),name="admin_metrics_constancia"),
 
     # Documents
-    path("documents/",                            DocumentListView.as_view(),          name="document_list"),
-    path("documents/create/",                     DocumentCreateView.as_view(),        name="document_create"),
-    path("documents/<int:id_documento>/",         DocumentDetailView.as_view(),        name="document_detail"),
-    path("documents/<int:id_documento>/delete/",  DocumentDeleteView.as_view(),        name="document_delete"),
-    path("documents/<int:id_documento>/confirm/", DocumentConfirmDeleteView.as_view(), name="document_confirm_delete"),
-    path("documents/<int:id_documento>/versoes/", DocumentVersoesView.as_view(),       name="document_versoes"),
+    path("documents/",                                          DocumentListView.as_view(),          name="document_list"),
+    path("documents/create/",                                   DocumentCreateView.as_view(),        name="document_create"),
+    path("documents/<int:id_documento>/",                       DocumentDetailView.as_view(),        name="document_detail"),
+    path("documents/<int:id_documento>/delete/",                DocumentDeleteView.as_view(),        name="document_delete"),
+    path("documents/<int:id_documento>/confirm/",               DocumentConfirmDeleteView.as_view(), name="document_confirm_delete"),
+    path("documents/<int:id_documento>/versoes/",               DocumentVersoesView.as_view(),       name="document_versoes"),
     path("documents/<int:id_documento>/versoes/<int:numero>/ativar/", DocumentVersaoAtivarView.as_view(), name="document_versao_ativar"),
-    path("documents/reindexar/",                  DocumentReindexBaseView.as_view(),  name="document_reindex_base"),
-    path("documents/<int:id_documento>/reindexar/", DocumentReindexView.as_view(),   name="document_reindex"),
+
+    # NOVOS endpoints
+    path("documents/<int:id_documento>/metadata/",      DocumentMetadataView.as_view(),     name="document_metadata"),
+    path("documents/<int:id_documento>/admin-action/",  DocumentAdminActionView.as_view(),  name="document_admin_action"),
+
+    path("categories/",           CategoryListView.as_view(),         name="category_list"),
+    path("categories/<str:tipo>/", CategoryDocumentListView.as_view(), name="category_documents"),
 
     # Admin Logs
     path("admin-logs/", AdminLogListView.as_view(), name="admin_logs"),

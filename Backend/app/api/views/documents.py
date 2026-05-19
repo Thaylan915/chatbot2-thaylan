@@ -7,11 +7,7 @@ from Backend.app.api.permissions import IsAdminProfile as IsAdminUser
 from Backend.app.api.factories import DocumentFactory
 from Backend.app.application.log_action import log_action
 from Backend.app.documents.models import Documento, VersaoDocumento
-from Backend.app.application.document_versioning import (
-    ativar_versao,
-    regerar_chunks_documento,
-    reindexar_base,
-)
+from Backend.app.application.document_versioning import ativar_versao
 
 
 class DocumentListView(APIView):
@@ -23,7 +19,6 @@ class DocumentListView(APIView):
             data_inicio = request.query_params.get("data_inicio") or None
             data_fim    = request.query_params.get("data_fim") or None
 
-            # Valida tipo se fornecido
             if tipo and tipo not in ("portaria", "resolucao", "rod"):
                 return Response(
                     {"error": "Tipo inválido. Use 'portaria', 'resolucao' ou 'rod'."},
@@ -169,6 +164,128 @@ class DocumentDetailView(APIView):
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
+# ─── NOVA CLASSE ──────────────────────────────────────────────────────────────
+
+class DocumentMetadataView(APIView):
+    """
+    GET /api/documents/<id>/metadata/
+
+    Expõe os metadados completos de um documento:
+      - Dados básicos (id, nome, tipo, caminho_arquivo)
+      - Timestamps (indexado_em, atualizado_em)
+      - Resumo de versões (total, versão ativa e seu número)
+      - Resumo de chunks (total indexado, por versão ativa)
+    """
+
+    permission_classes = [IsAuthenticated, IsAdminUser]
+
+    def get(self, request, id_documento: int):
+        try:
+            doc = Documento.objects.get(id=id_documento)
+        except Documento.DoesNotExist:
+            return Response(
+                {"error": "Documento não encontrado."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        versao_ativa = doc.versoes.filter(ativa=True).first()
+
+        total_chunks = doc.chunks.count()
+        chunks_versao_ativa = (
+            versao_ativa.chunks.count() if versao_ativa else 0
+        )
+
+        metadata = {
+            "id": doc.id,
+            "nome": doc.nome,
+            "tipo": doc.tipo,
+            "tipo_display": doc.get_tipo_display(),
+            "caminho_arquivo": doc.caminho_arquivo,
+            "indexado_em": doc.indexado_em,
+            "atualizado_em": doc.atualizado_em,
+            "versoes": {
+                "total": doc.versoes.count(),
+                "versao_ativa": versao_ativa.numero if versao_ativa else None,
+                "caminho_versao_ativa": versao_ativa.caminho_arquivo if versao_ativa else None,
+            },
+            "chunks": {
+                "total": total_chunks,
+                "na_versao_ativa": chunks_versao_ativa,
+            },
+        }
+
+        return Response(metadata, status=status.HTTP_200_OK)
+
+
+# ─── NOVA CLASSE ──────────────────────────────────────────────────────────────
+
+class DocumentAdminActionView(APIView):
+    """
+    POST /api/documents/<id>/admin-action/
+
+    Registra manualmente uma ação administrativa sobre um documento.
+
+    Body JSON esperado:
+        action   (str, obrigatório) — "CREATE" | "UPDATE" | "DELETE" | "REINDEX"
+        details  (str, opcional)   — Descrição livre da ação realizada
+    """
+
+    permission_classes = [IsAuthenticated, IsAdminUser]
+
+    ACOES_VALIDAS = {"CREATE", "UPDATE", "DELETE", "REINDEX"}
+
+    def post(self, request, id_documento: int):
+        action  = (request.data.get("action") or "").strip().upper()
+        details = (request.data.get("details") or "").strip()
+
+        if not action:
+            return Response(
+                {"error": "O campo 'action' é obrigatório."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if action not in self.ACOES_VALIDAS:
+            return Response(
+                {
+                    "error": (
+                        f"Ação inválida: '{action}'. "
+                        f"Use uma de: {', '.join(sorted(self.ACOES_VALIDAS))}."
+                    )
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+            doc = Documento.objects.get(id=id_documento)
+        except Documento.DoesNotExist:
+            return Response(
+                {"error": "Documento não encontrado."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        log_action(
+            user=request.user,
+            action=action,
+            resource_type="document",
+            resource_id=doc.id,
+            resource_name=doc.nome,
+            details=details or f"Ação administrativa manual: {action}",
+        )
+
+        return Response(
+            {
+                "mensagem": "Ação registrada com sucesso.",
+                "documento": {"id": doc.id, "nome": doc.nome},
+                "action": action,
+                "details": details,
+                "registrado_por": request.user.username,
+            },
+            status=status.HTTP_201_CREATED,
+        )
+
+
+# ──────────────────────────────────────────────────────────────────────────────
+
 class DocumentDeleteView(APIView):
     permission_classes = [IsAuthenticated, IsAdminUser]
 
@@ -240,64 +357,6 @@ class DocumentVersaoAtivarView(APIView):
             "nome": versao.nome,
             "tipo": versao.tipo,
         })
-
-
-class DocumentReindexView(APIView):
-    """
-    POST /api/documents/<id>/reindexar/   — regera chunks da versão ativa.
-    """
-    permission_classes = [IsAuthenticated, IsAdminUser]
-
-    def post(self, request, id_documento: int):
-        try:
-            doc = Documento.objects.get(id=id_documento)
-        except Documento.DoesNotExist:
-            return Response({"error": "Documento não encontrado."}, status=status.HTTP_404_NOT_FOUND)
-
-        try:
-            resultado = regerar_chunks_documento(doc)
-            log_action(
-                user=request.user,
-                action="REINDEX",
-                resource_type="document",
-                resource_id=doc.id,
-                resource_name=doc.nome,
-                details=f"chunks regenerados: {resultado.get('qtd_chunks')}",
-            )
-            return Response({
-                "id":            doc.id,
-                "nome":          doc.nome,
-                "versao_ativa":  resultado.get("versao_ativa"),
-                "qtd_chunks":    resultado.get("qtd_chunks"),
-                "criou_versao":  resultado.get("criou_versao", False),
-            })
-        except Exception as e:
-            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-
-class DocumentReindexBaseView(APIView):
-    """
-    POST /api/documents/reindexar/   — reindexa TODOS os documentos da base.
-    """
-    permission_classes = [IsAuthenticated, IsAdminUser]
-
-    def post(self, request):
-        try:
-            resultado = reindexar_base()
-            log_action(
-                user=request.user,
-                action="REINDEX",
-                resource_type="base",
-                resource_name="todos",
-                details=(
-                    f"docs={resultado['total_documentos']} "
-                    f"chunks={resultado['total_chunks']} "
-                    f"erros={resultado['erros']}"
-                ),
-            )
-            return Response(resultado)
-        except Exception as e:
-            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 class DocumentConfirmDeleteView(APIView):

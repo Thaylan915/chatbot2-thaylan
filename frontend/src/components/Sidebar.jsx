@@ -23,15 +23,16 @@ export default function Sidebar({ refreshKey } = {}) {
       setConversas([]);
       return;
     }
-    api.get("/api/users/me/")
+    api
+      .get("/api/users/me/")
       .then((res) => setUsuario(res.data))
       .catch(() => setUsuario(null));
   }, []);
 
-  // Carrega conversas; recarrega quando refreshKey mudar (ex.: após enviar pergunta)
   useEffect(() => {
     if (!authService.isAuthenticated()) return;
-    api.get("/api/chat/conversas/")
+    api
+      .get("/api/chat/conversas/")
       .then((res) => setConversas(res.data?.conversas || []))
       .catch(() => setConversas([]));
   }, [refreshKey]);
@@ -40,13 +41,9 @@ export default function Sidebar({ refreshKey } = {}) {
     authService.logout();
     navigate("/");
   }
-
   function handleNovoChat() {
-    // Usa um param "_novo" com timestamp para forçar `location.search` a mudar
-    // mesmo se o usuário já estiver em `/admin` (sem `?conversa=`).
     navigate(`/admin?_novo=${Date.now()}`);
   }
-
   function handleSelecionar(id) {
     navigate(`/admin?conversa=${id}`);
   }
@@ -104,6 +101,15 @@ export default function Sidebar({ refreshKey } = {}) {
               <span>Base de conhecimento</span>
             </div>
 
+            {/* ── NOVO: link para Categorias ── */}
+            <div
+              className="item menu"
+              onClick={() => navigate("/admin/categorias")}
+            >
+              <img src={basedeconhec} className="icon" />
+              <span>Categorias</span>
+            </div>
+
             <div
               className="item menu"
               onClick={() => navigate("/admin/metricas")}
@@ -140,7 +146,9 @@ export default function Sidebar({ refreshKey } = {}) {
               title={c.titulo}
               style={{
                 cursor: "pointer",
-                backgroundColor: ativo ? "rgba(255, 255, 255, 0.06)" : "transparent",
+                backgroundColor: ativo
+                  ? "rgba(255,255,255,0.06)"
+                  : "transparent",
               }}
             >
               {c.titulo || `Chat ${formatarData(c.iniciada_em)}`}
