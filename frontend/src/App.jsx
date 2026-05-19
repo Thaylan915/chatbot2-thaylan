@@ -6,6 +6,7 @@ import Chat from "./pages/Chat";
 import BaseDeConhecimento from "./pages/BaseDeConhecimento";
 import Metricas from "./pages/Metricas";
 import Historico from "./pages/Historico";
+import Categorias from "./pages/Categorias";
 import { authService } from "./services/authService";
 import api from "./services/api";
 
@@ -21,9 +22,11 @@ function RotaAdmin({ children }) {
       setEstado("nao-auth");
       return;
     }
-    api.get("/api/users/me/")
+    api
+      .get("/api/users/me/")
       .then((res) => {
-        const isAdmin = res.data?.role === "admin" || res.data?.is_staff === true;
+        const isAdmin =
+          res.data?.role === "admin" || res.data?.is_staff === true;
         setEstado(isAdmin ? "admin" : "nao-admin");
       })
       .catch(() => setEstado("nao-auth"));
@@ -41,10 +44,46 @@ function App() {
       <Routes>
         <Route path="/" element={<Login />} />
         <Route path="/cadastro" element={<Cadastro />} />
-        <Route path="/admin" element={<RotaProtegida><Chat /></RotaProtegida>} />
-        <Route path="/admin/base-de-conhecimento" element={<RotaAdmin><BaseDeConhecimento /></RotaAdmin>} />
-        <Route path="/admin/metricas" element={<RotaAdmin><Metricas /></RotaAdmin>} />
-        <Route path="/admin/historico" element={<RotaAdmin><Historico /></RotaAdmin>} />
+        <Route
+          path="/admin"
+          element={
+            <RotaProtegida>
+              <Chat />
+            </RotaProtegida>
+          }
+        />
+        <Route
+          path="/admin/base-de-conhecimento"
+          element={
+            <RotaAdmin>
+              <BaseDeConhecimento />
+            </RotaAdmin>
+          }
+        />
+        <Route
+          path="/admin/metricas"
+          element={
+            <RotaAdmin>
+              <Metricas />
+            </RotaAdmin>
+          }
+        />
+        <Route
+          path="/admin/historico"
+          element={
+            <RotaAdmin>
+              <Historico />
+            </RotaAdmin>
+          }
+        />
+        <Route
+          path="/admin/categorias"
+          element={
+            <RotaAdmin>
+              <Categorias />
+            </RotaAdmin>
+          }
+        />
       </Routes>
     </BrowserRouter>
   );
