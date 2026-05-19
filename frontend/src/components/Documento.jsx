@@ -38,6 +38,8 @@ export default function Documento({
   status,
   tipoAtual,
   reindexando,
+  versaoAtiva,
+  totalVersoes,
   onDelete,
   onEdit,
   onReindex,
