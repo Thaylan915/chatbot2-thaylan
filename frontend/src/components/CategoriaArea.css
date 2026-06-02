@@ -1,0 +1,227 @@
+.catArea {
+  flex: 1;
+  min-height: 100vh;
+  background-color: #393e46;
+  color: white;
+  display: flex;
+  flex-direction: column;
+}
+
+.catTopo {
+  background-color: #222831;
+  padding: 24px 40px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.catTopoLeft {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.catTopo h2 {
+  font-size: 28px;
+  margin: 0;
+}
+
+.catSubtitulo {
+  font-size: 13px;
+  color: #aaa;
+  margin: 4px 0 0 0;
+}
+
+.catBadge {
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  font-weight: 800;
+  color: #fff;
+  flex-shrink: 0;
+}
+
+.catBtnVoltar {
+  background: none;
+  border: 1px solid #ffffff30;
+  color: #ccc;
+  border-radius: 8px;
+  padding: 6px 14px;
+  font-size: 13px;
+  cursor: pointer;
+  transition:
+    border-color 0.2s,
+    color 0.2s;
+}
+.catBtnVoltar:hover {
+  border-color: #00adb5;
+  color: #00adb5;
+}
+
+.catGrid {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 32px 40px;
+  max-width: 720px;
+}
+
+.catCard {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  background-color: #222831;
+  border: 1px solid #ffffff10;
+  border-radius: 18px;
+  padding: 20px 24px;
+  cursor: pointer;
+  transition:
+    border-color 0.2s,
+    transform 0.15s,
+    box-shadow 0.2s;
+  text-align: left;
+  color: white;
+  position: relative;
+  overflow: hidden;
+}
+
+.catCard::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background-color: var(--cat-cor);
+  border-radius: 18px 0 0 18px;
+}
+
+.catCard:hover {
+  border-color: var(--cat-cor);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+}
+
+.catCardSigla {
+  width: 52px;
+  height: 52px;
+  border-radius: 14px;
+  background-color: var(--cat-cor);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  font-weight: 800;
+  color: white;
+  flex-shrink: 0;
+}
+
+.catCardInfo {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.catCardLabel {
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.catCardTotal {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--cat-cor);
+}
+
+.catCardTotal small {
+  font-size: 13px;
+  font-weight: 400;
+  color: #aaa;
+  margin-left: 4px;
+}
+
+.catCardArrow {
+  font-size: 22px;
+  color: #ffffff30;
+  transition:
+    color 0.2s,
+    transform 0.2s;
+}
+
+.catCard:hover .catCardArrow {
+  color: var(--cat-cor);
+  transform: translateX(4px);
+}
+
+/* ── Filtros ── */
+.catFiltros {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 16px 40px;
+  background-color: #2d333b;
+  flex-wrap: wrap;
+}
+
+.catFiltroLabel {
+  font-size: 13px;
+  color: #aaa;
+}
+
+.catFiltroData {
+  background: #393e46;
+  border: 1px solid #ffffff20;
+  border-radius: 8px;
+  color: white;
+  padding: 6px 10px;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.catFiltroData:focus {
+  outline: none;
+  border-color: #00adb5;
+}
+
+.catBtnFiltrar {
+  background-color: #00adb5;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 6px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+.catBtnFiltrar:hover {
+  background-color: #009aa1;
+}
+
+.catBtnLimpar {
+  background: none;
+  border: 1px solid #ffffff20;
+  color: #aaa;
+  border-radius: 8px;
+  padding: 6px 12px;
+  font-size: 13px;
+  cursor: pointer;
+}
+.catBtnLimpar:hover {
+  border-color: #ff6b6b;
+  color: #ff6b6b;
+}
+
+.catListaWrap {
+  flex: 1;
+  padding: 24px 40px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  overflow-y: auto;
+}

@@ -1,0 +1,263 @@
+/* ── Card de documento ── */
+.docCat {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  background-color: #222831;
+  border: 1px solid #ffffff10;
+  border-radius: 14px;
+  padding: 16px 20px;
+  position: relative;
+  overflow: hidden;
+  transition:
+    border-color 0.2s,
+    box-shadow 0.2s;
+}
+
+.docCat:hover {
+  border-color: var(--cat-cor);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+}
+
+.docCatBar {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background-color: var(--cat-cor);
+}
+
+.docCatInfo {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.docCatNome {
+  font-size: 15px;
+  font-weight: 600;
+  color: #eee;
+}
+
+.docCatMeta {
+  font-size: 12px;
+  color: #888;
+}
+
+.docCatAcoes {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.docCatBtn {
+  border: none;
+  border-radius: 8px;
+  padding: 6px 14px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+.docCatBtn:hover {
+  opacity: 0.85;
+}
+
+.docCatBtnMeta {
+  background-color: #00adb520;
+  color: #00adb5;
+  border: 1px solid #00adb540;
+}
+.docCatBtnMeta:hover {
+  background-color: #00adb530;
+}
+
+.docCatBtnAdmin {
+  background-color: #7c6af720;
+  color: #a89ff7;
+  border: 1px solid #7c6af740;
+}
+.docCatBtnAdmin:hover {
+  background-color: #7c6af730;
+}
+
+/* ── Overlay / Modal ── */
+.catOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 999;
+}
+
+.catModal {
+  background: #222831;
+  border: 1px solid #ffffff15;
+  border-radius: 18px;
+  padding: 28px 32px;
+  width: 100%;
+  max-width: 520px;
+  max-height: 85vh;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.catModalTitulo {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.catModalTituloIco {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 15px;
+  font-weight: 800;
+  color: white;
+  flex-shrink: 0;
+}
+
+.catModalDoc {
+  margin: 0;
+  font-size: 13px;
+  color: #aaa;
+}
+
+/* ── Metadados ── */
+.metaGrid {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  background: #393e46;
+  border-radius: 12px;
+  padding: 12px;
+}
+
+.metaRow {
+  display: flex;
+  gap: 12px;
+  padding: 7px 8px;
+  border-radius: 6px;
+  font-size: 13px;
+}
+.metaRow:nth-child(odd) {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.metaLabel {
+  width: 140px;
+  flex-shrink: 0;
+  color: #888;
+  font-weight: 500;
+}
+
+.metaValue {
+  color: #eee;
+  word-break: break-all;
+  flex: 1;
+}
+
+.metaMono {
+  font-family: "Courier New", monospace;
+  font-size: 11px;
+  color: #00adb5;
+}
+
+.metaDivider {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #555;
+  padding: 10px 8px 2px;
+}
+
+/* ── Ação admin ── */
+.catLabel {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 13px;
+  color: #aaa;
+}
+
+.catSelect,
+.catTextarea {
+  background: #393e46;
+  border: 1px solid #ffffff20;
+  border-radius: 8px;
+  color: white;
+  padding: 8px 12px;
+  font-size: 14px;
+  font-family: inherit;
+  resize: vertical;
+}
+.catSelect:focus,
+.catTextarea:focus {
+  outline: none;
+  border-color: #7c6af7;
+}
+
+.acaoSucesso {
+  background: #00adb520;
+  border: 1px solid #00adb550;
+  color: #00adb5;
+  border-radius: 10px;
+  padding: 14px 18px;
+  font-size: 14px;
+  text-align: center;
+}
+
+/* ── Botões do modal ── */
+.catModalActions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  margin-top: 4px;
+}
+
+.catBtnFechar {
+  background: none;
+  border: 1px solid #ffffff20;
+  color: #ccc;
+  border-radius: 8px;
+  padding: 8px 20px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: border-color 0.2s;
+}
+.catBtnFechar:hover {
+  border-color: #aaa;
+}
+
+.catBtnRegistrar {
+  background-color: #7c6af7;
+  border: none;
+  color: white;
+  border-radius: 8px;
+  padding: 8px 20px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+.catBtnRegistrar:hover {
+  background-color: #6a59e0;
+}
+.catBtnRegistrar:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
