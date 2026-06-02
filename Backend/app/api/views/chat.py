@@ -3,8 +3,9 @@ from django.db.models import Count, Max
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.permissions import IsAuthenticated
 
+from Backend.app.api.permissions import IsAdminProfile as IsAdminUser
 from Backend.app.application.answer_question import (
     iniciar_conversa,
     gerar_titulo_conversa,
@@ -406,7 +407,7 @@ class ConversasUsuarioView(APIView):
 
 
 class ChatHistoricoPeriodoView(APIView):
-    permission_classes = [AllowAny] # Mude para IsAuthenticated se apenas admins puderem ver
+    permission_classes = [IsAuthenticated, IsAdminUser]
 
     def get(self, request):
         start_date = request.query_params.get('start_date')
@@ -441,7 +442,7 @@ class ChatMetricasView(APIView):
     GET /api/chat/metricas/
     Retorna estatísticas gerais para o dashboard de métricas.
     """
-    permission_classes = [AllowAny]
+    permission_classes = [IsAuthenticated, IsAdminUser]
 
     def get(self, request):
         total_conversas = Conversa.objects.count()

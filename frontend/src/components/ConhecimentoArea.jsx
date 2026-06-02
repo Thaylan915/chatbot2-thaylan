@@ -231,7 +231,7 @@ export default function ConhecimentoArea() {
             <div style={{ display: "flex", gap: 8 }}>
               <button
                 className="btnReindexar"
-                onClick={carregar}
+                onClick={() => carregar()}
                 disabled={reindexando}
                 title="Recarregar lista"
               >
@@ -272,7 +272,7 @@ export default function ConhecimentoArea() {
                 onDelete={() => handleExcluir(d.id)}
                 onEdit={(payload) => handleEditar(d.id, payload)}
                 onReindex={() => handleReindexarDocumento(d.id)}
-                onVersoesChange={carregar}
+                onVersoesChange={() => carregar()}
               />
             ))}
           </div>

@@ -125,6 +125,7 @@ export default function Metricas() {
   const [chat,  setChat]            = useState(null);
   const [usuarios, setUsuarios]     = useState(null);
   const [constancia, setConstancia] = useState(null);
+  const [logs, setLogs]             = useState(null);
   const [loading, setLoading]       = useState(true);
 
   useEffect(() => {
@@ -133,11 +134,13 @@ export default function Metricas() {
       api.get("/api/chat/metricas/"),
       api.get("/api/admin/metrics/usuarios/"),
       api.get("/api/admin/metrics/constancia/?dias=14"),
-    ]).then(([a, c, u, k]) => {
+      api.get("/api/admin-logs/"),
+    ]).then(([a, c, u, k, l]) => {
       if (a.status === "fulfilled") setAdmin(a.value.data);
       if (c.status === "fulfilled") setChat(c.value.data);
       if (u.status === "fulfilled") setUsuarios(u.value.data?.usuarios || []);
       if (k.status === "fulfilled") setConstancia(k.value.data);
+      if (l.status === "fulfilled") setLogs(l.value.data || []);
       setLoading(false);
     });
   }, []);
@@ -285,8 +288,77 @@ export default function Metricas() {
             </div>
           </>
         )}
+
+        {/* ── Ações administrativas ─────────────────────────────────────── */}
+        {logs && (
+          <>
+            <h2 style={{ marginTop: 40, fontSize: "1.2rem", color: "#a0a0a0", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+              Ações administrativas · últimos {logs.length} registros
+            </h2>
+            <div style={{ background: "#2c2f33", border: "1px solid #444", borderRadius: 12, overflow: "hidden", marginTop: 12 }}>
+              <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 14 }}>
+                <thead>
+                  <tr style={{ background: "#1c1c1c", textAlign: "left" }}>
+                    <th style={th}>Data/Hora</th>
+                    <th style={th}>Usuário</th>
+                    <th style={th}>Ação</th>
+                    <th style={th}>Recurso</th>
+                    <th style={th}>Nome</th>
+                    <th style={th}>Detalhes</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {logs.length === 0 && (
+                    <tr><td colSpan={6} style={{ ...td, textAlign: "center", color: "#a0a0a0", padding: 18 }}>
+                      Nenhuma ação registrada ainda.
+                    </td></tr>
+                  )}
+                  {logs.map((log) => (
+                    <tr key={log.id} style={{ borderTop: "1px solid #444" }}>
+                      <td style={{ ...td, fontSize: 12, color: "#a0a0a0", whiteSpace: "nowrap" }}>
+                        {log.timestamp}
+                      </td>
+                      <td style={{ ...td, fontWeight: 600 }}>{log.user}</td>
+                      <td style={td}>
+                        <ChipAcao acao={log.action} />
+                      </td>
+                      <td style={{ ...td, color: "#a0a0a0" }}>{log.resource_type || "—"}</td>
+                      <td style={td}>
+                        {log.resource_name?.length > 60
+                          ? log.resource_name.slice(0, 57) + "…"
+                          : log.resource_name || "—"}
+                      </td>
+                      <td style={{ ...td, color: "#a0a0a0", fontSize: 12 }}>{log.details || "—"}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </>
+        )}
       </div>
     </div>
+  );
+}
+
+const ACOES = {
+  LOGIN:   { label: "Login",         cor: "#4a90e2", bg: "#4a90e222" },
+  LOGOUT:  { label: "Logout",        cor: "#a0a0a0", bg: "#a0a0a022" },
+  CREATE:  { label: "Criação",       cor: "#4caf50", bg: "#4caf5022" },
+  UPDATE:  { label: "Edição",        cor: "#f0c87a", bg: "#f0c87a22" },
+  DELETE:  { label: "Exclusão",      cor: "#ff6b6b", bg: "#ff6b6b22" },
+  REINDEX: { label: "Reindexação",   cor: "#00adb5", bg: "#00adb522" },
+};
+
+function ChipAcao({ acao }) {
+  const info = ACOES[acao] || { label: acao, cor: "#a0a0a0", bg: "#a0a0a022" };
+  return (
+    <span style={{
+      padding: "2px 10px", borderRadius: 12, fontSize: 12, fontWeight: 600,
+      background: info.bg, color: info.cor, display: "inline-block",
+    }}>
+      {info.label}
+    </span>
   );
 }
 

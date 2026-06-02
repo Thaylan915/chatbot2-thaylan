@@ -200,6 +200,126 @@ export default function ChatArea() {
     }
   }
 
+  function perguntaAnteriorA(index) {
+    for (let j = index - 1; j >= 0; j--) {
+      if (mensagens[j].role === "user") return mensagens[j].conteudo || "";
+    }
+    return "";
+  }
+
+  function baixarBlob(blob, nomeArquivo) {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = nomeArquivo;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+
+  function exportarRespostaTxt(index, msg) {
+    const pergunta = perguntaAnteriorA(index);
+    const data = new Date().toLocaleString("pt-BR");
+    const fontes = (msg.fontes || []).map((f) => `- ${f.nome}`).join("\n");
+    const citacoes = (msg.citacoes || [])
+      .map(
+        (c) =>
+          `[${c.ordem}] ${c.documento_nome}${
+            c.numero_pagina ? ` (pág. ${c.numero_pagina})` : ""
+          }\n    "${c.trecho}"`
+      )
+      .join("\n");
+
+    const conteudo =
+      `Relatório de resposta — Chatbot IFES\n` +
+      `Gerado em: ${data}\n\n` +
+      `Pergunta:\n${pergunta}\n\n` +
+      `Resposta:\n${msg.conteudo || ""}\n\n` +
+      (fontes ? `Fontes:\n${fontes}\n\n` : "") +
+      (citacoes ? `Citações:\n${citacoes}\n` : "");
+
+    const nome = `resposta_${msg.id || "chat"}_${new Date()
+      .toISOString()
+      .slice(0, 10)}.txt`;
+    baixarBlob(new Blob([conteudo], { type: "text/plain;charset=utf-8" }), nome);
+  }
+
+  async function exportarRespostaPdf(index, msg) {
+    const { jsPDF } = await import(
+      "https://cdn.jsdelivr.net/npm/jspdf@2.5.1/+esm"
+    );
+
+    const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+    const largura = doc.internal.pageSize.getWidth();
+    const altura = doc.internal.pageSize.getHeight();
+    const margemEsq = 15;
+    const margemDir = largura - 15;
+    const larguraUtil = margemDir - margemEsq;
+    let y = 20;
+
+    // Cabeçalho
+    doc.setFillColor(34, 40, 49);
+    doc.rect(0, 0, largura, 28, "F");
+    doc.setTextColor(238, 238, 238);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(16);
+    doc.text("Relatório de Resposta — Chatbot IFES", margemEsq, 17);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(9);
+    doc.text(
+      `Gerado em: ${new Date().toLocaleString("pt-BR")}`,
+      margemDir,
+      17,
+      { align: "right" }
+    );
+    y = 38;
+
+    const escreverBloco = (titulo, texto, corTitulo = [0, 173, 181]) => {
+      if (!texto) return;
+      const linhas = doc.splitTextToSize(texto, larguraUtil);
+      const espacoNecessario = 8 + linhas.length * 5 + 4;
+      if (y + espacoNecessario > altura - 15) {
+        doc.addPage();
+        y = 20;
+      }
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(11);
+      doc.setTextColor(...corTitulo);
+      doc.text(titulo, margemEsq, y);
+      y += 6;
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(10);
+      doc.setTextColor(40, 40, 40);
+      doc.text(linhas, margemEsq, y);
+      y += linhas.length * 5 + 4;
+    };
+
+    escreverBloco("Pergunta", perguntaAnteriorA(index));
+    escreverBloco("Resposta", msg.conteudo || "");
+
+    if (msg.fontes?.length) {
+      const lista = msg.fontes.map((f) => `• ${f.nome}`).join("\n");
+      escreverBloco("Fontes consultadas", lista);
+    }
+
+    if (msg.citacoes?.length) {
+      const lista = msg.citacoes
+        .map(
+          (c) =>
+            `[${c.ordem}] ${c.documento_nome}${
+              c.numero_pagina ? ` (pág. ${c.numero_pagina})` : ""
+            }\n    "${c.trecho}"`
+        )
+        .join("\n\n");
+      escreverBloco("Citações", lista);
+    }
+
+    doc.save(
+      `resposta_${msg.id || "chat"}_${new Date().toISOString().slice(0, 10)}.pdf`
+    );
+  }
+
   // ISSUE 4: FUNÇÃO PARA ENVIAR FEEDBACK DA RESPOSTA
   async function enviarFeedback(index, mensagemId, nota) {
     if (!mensagemId) return;
@@ -300,16 +420,62 @@ export default function ChatArea() {
                     </div>
                   )}
 
-                  {/* ISSUE 4: BOTÕES DE AVALIAÇÃO */}
+                  {/* Botões de avaliação */}
                   {msg.role === "assistant" && msg.id && !semResposta && !msg.avaliada && (
                     <div className="feedbackArea">
                       <span className="feedbackPergunta">A resposta foi útil?</span>
                       <button onClick={() => enviarFeedback(i, msg.id, 1)} title="Sim">👍</button>
                       <button onClick={() => enviarFeedback(i, msg.id, -1)} title="Não">👎</button>
+                      <button
+                        onClick={() => regenerar(msg.id)}
+                        title="Reformular resposta"
+                        disabled={carregando}
+                        style={{ marginLeft: 8 }}
+                      >
+                        🔄 Reformular
+                      </button>
+                      <button
+                        onClick={() => exportarRespostaPdf(i, msg)}
+                        title="Exportar resposta como PDF"
+                        style={{ marginLeft: 8 }}
+                      >
+                        📄 PDF
+                      </button>
+                      <button
+                        onClick={() => exportarRespostaTxt(i, msg)}
+                        title="Exportar resposta como texto"
+                        style={{ marginLeft: 4 }}
+                      >
+                        📝 TXT
+                      </button>
                     </div>
                   )}
-                  {msg.avaliada && (
-                     <div className="feedbackArea"><span className="feedbackObrigado">Obrigado pelo feedback! ✓</span></div>
+                  {msg.avaliada && msg.role === "assistant" && msg.id && !semResposta && (
+                    <div className="feedbackArea">
+                      <span className="feedbackObrigado">Obrigado pelo feedback! ✓</span>
+                      <button
+                        onClick={() => regenerar(msg.id)}
+                        title="Reformular resposta"
+                        disabled={carregando}
+                        style={{ marginLeft: 8 }}
+                      >
+                        🔄 Reformular
+                      </button>
+                      <button
+                        onClick={() => exportarRespostaPdf(i, msg)}
+                        title="Exportar resposta como PDF"
+                        style={{ marginLeft: 8 }}
+                      >
+                        📄 PDF
+                      </button>
+                      <button
+                        onClick={() => exportarRespostaTxt(i, msg)}
+                        title="Exportar resposta como texto"
+                        style={{ marginLeft: 4 }}
+                      >
+                        📝 TXT
+                      </button>
+                    </div>
                   )}
                 </div>
               );

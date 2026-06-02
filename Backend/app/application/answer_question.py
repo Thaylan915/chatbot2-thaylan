@@ -41,6 +41,7 @@ Regras obrigatórias:
 3. Se a informação não estiver totalmente confirmada no contexto, explique a incerteza sem encerrar a resposta.
 4. Se nenhum trecho relevante for recuperado, responda de forma útil e transparente, sem inventar detalhes documentais.
 5. Evite respostas secas ou genéricas; prefira contextualizar o significado do documento, o alcance da regra e, quando cabível, as implicações práticas.
+6. Tratamento de ambiguidade: se os trechos recuperados sugerirem que a pergunta pode se referir a entidades, pessoas, datas ou documentos distintos (por exemplo, duas portarias diferentes envolvendo a mesma pessoa, ou homônimos), comece a resposta resumindo brevemente cada interpretação possível com sua fonte e, em seguida, peça em linguagem natural que o usuário confirme a qual delas se refere antes de aprofundar. Faça isso de forma conversacional, sem listas de seleção.
 
 Contexto:
 {contexto}
@@ -600,8 +601,10 @@ class ResponderPergunta:
                 candidates = self._chunk_repo.buscar_candidatos(query_embedding, fetch_k)
                 candidates = _priorizar_candidatos_por_tipo(candidates, tipo_prioritario)
 
-            # Filtro opcional por documento (mantido para retrocompatibilidade
-            # com o fluxo de clarificação, que hoje não é mais usado por padrão).
+            # Filtro opcional por documento (retrocompatibilidade com clientes
+            # que ainda enviem documento_id_filtro). A ambiguidade hoje é
+            # tratada pelo próprio modelo em linguagem natural — ver
+            # _PROMPT_TEMPLATE (regra "ambiguidade").
             if documento_id_filtro is not None:
                 candidates = [
                     c for c in candidates
@@ -609,8 +612,6 @@ class ResponderPergunta:
                 ]
                 if not candidates:
                     return self._sem_resposta(_MENSAGEM_SEM_RESPOSTA)
-            # Detecção de ambiguidade desativada — o modelo recebe os top chunks
-            # de todos os documentos e responde citando cada origem.
 
             # 5. Re-ranking MMR
             chunks = _mmr_rerank(candidates, top_k=settings.TOP_K)
