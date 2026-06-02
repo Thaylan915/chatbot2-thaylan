@@ -1,7 +1,23 @@
 {
   "permissions": {
     "allow": [
-      "mcp__Claude_Preview__preview_start"
+      "mcp__Claude_Preview__preview_start",
+      "Bash(curl -s -X POST http://127.0.0.1:8000/api/auth/login/ -H \"Content-Type: application/json\" -d '{\"username\":\"admin\",\"password\":\"admin\"}')",
+      "Bash(python -m json.tool)",
+      "Bash(python -c ' *)",
+      "Bash(python -c \"import pdfplumber; pdf = pdfplumber.open\\(r'C:\\\\Users\\\\User\\\\Downloads\\\\RequisitosSistemaChatbot.pdf'\\); [print\\(p.extract_text\\(\\)\\) for p in pdf.pages]; pdf.close\\(\\)\")",
+      "Bash(python -c 'import sys, io; sys.stdout = io.TextIOWrapper\\(sys.stdout.buffer, encoding='\\\\''utf-8'\\\\''\\); from pypdf import PdfReader; r = PdfReader\\(r'\\\\''C:\\\\Users\\\\User\\\\Downloads\\\\RequisitosSistemaChatbot.pdf'\\\\''\\); *)",
+      "Bash(python \"C:/Users/User/chatbot2/_extract_pdf.py\")",
+      "Bash(ls \"C:\\\\Users\\\\User\\\\Downloads\\\\Template Resumo Expandido.doc\")",
+      "Bash(python \"C:\\\\Users\\\\User\\\\AppData\\\\Roaming\\\\Claude\\\\local-agent-mode-sessions\\\\skills-plugin\\\\6e953439-fe65-45e2-92e9-bd9203abe060\\\\729e7f28-8bb9-43d9-b869-28aeea953f42\\\\skills\\\\docx\\\\scripts\\\\office\\\\soffice.py\" --headless --convert-to docx \"Template Resumo Expandido.doc\")",
+      "Bash(ls \"C:\\\\Users\\\\User\\\\AppData\\\\Roaming\\\\Claude\\\\local-agent-mode-sessions\\\\skills-plugin\\\\6e953439-fe65-45e2-92e9-bd9203abe060\\\\729e7f28-8bb9-43d9-b869-28aeea953f42\\\\skills\\\\docx\\\\scripts\\\\office\\\\\")",
+      "PowerShell(python $script --headless --convert-to docx \"C:\\\\Users\\\\User\\\\Downloads\\\\Template Resumo Expandido.doc\" --outdir \"C:\\\\Users\\\\User\\\\Downloads\")",
+      "PowerShell($script = \"C:\\\\Users\\\\User\\\\AppData\\\\Roaming\\\\Claude\\\\local-agent-mode-sessions\\\\skills-plugin\\\\6e953439-fe65-45e2-92e9-bd9203abe060\\\\729e7f28-8bb9-43d9-b869-28aeea953f42\\\\skills\\\\docx\\\\scripts\\\\office\\\\soffice.py\")",
+      "PowerShell($word = New-Object -ComObject Word.Application; $word.Visible = $false; $doc = $word.Documents.Open\\(\"C:\\\\Users\\\\User\\\\Downloads\\\\Template Resumo Expandido.doc\"\\); $doc.SaveAs2\\(\"C:\\\\Users\\\\User\\\\Downloads\\\\Template Resumo Expandido.docx\", 16\\); $doc.Close\\(\\); $word.Quit\\(\\); [System.Runtime.Interopservices.Marshal]::ReleaseComObject\\($word\\) | Out-Null; \"OK\")",
+      "PowerShell(powershell.exe -ExecutionPolicy Bypass -File \"C:\\\\Users\\\\User\\\\AppData\\\\Local\\\\Temp\\\\convert_doc.ps1\")",
+      "Bash(grep -oE \"REFER.{0,2}NCIAS.{0,1200}\" \"/c/Users/User/AppData/Local/Temp/template_text.txt\")",
+      "Bash(grep -oE \"\\(KERZNER|SCHWABER|PROJECT MANAGEMENT INSTITUTE|VARGAS\\).{0,200}\" \"/c/Users/User/AppData/Local/Temp/template_text.txt\")",
+      "Bash(grep -oE \"REFER.{0,2}NCIAS.{0,1500}\" \"/c/Users/User/AppData/Local/Temp/template_text.txt\")"
     ]
   }
 }
