@@ -1,7 +1,7 @@
 /* FUNDO */
 .pagina {
   min-height: 100vh;
-  background: linear-gradient(to bottom, #222831 55%, #393e46 45%);
+  background: linear-gradient(to bottom, #222831 0%, #393e46 100%);
   display: flex;
   flex-direction: column;
 }
@@ -72,6 +72,7 @@
   width: 350px;
   padding: 30px;
   background: #222831;
+  border: 1px solid rgba(238, 238, 238, 0.3);
   border-radius: 15px;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
   display: flex;

@@ -16,6 +16,7 @@ export default function Sidebar({ refreshKey } = {}) {
   const location = useLocation();
   const [usuario, setUsuario] = useState(null);
   const [conversas, setConversas] = useState([]);
+  const [menuAberto, setMenuAberto] = useState(false);
 
   useEffect(() => {
     if (!authService.isAuthenticated()) {
@@ -101,7 +102,6 @@ export default function Sidebar({ refreshKey } = {}) {
               <span>Base de conhecimento</span>
             </div>
 
-            {/* ── NOVO: link para Categorias ── */}
             <div
               className="item menu"
               onClick={() => navigate("/admin/categorias")}
@@ -158,13 +158,15 @@ export default function Sidebar({ refreshKey } = {}) {
       </div>
 
       <div className="perfil">
-        <div className="perfilInfo">
+        <div className="perfilInfo" onClick={() => setMenuAberto(!menuAberto)}>
           <div className="avatar">{inicial}</div>
           <div className="nome">{nomeExibido}</div>
         </div>
-        <button onClick={handleLogout} className="btnLogout">
-          Sair
-        </button>
+        {menuAberto && (
+          <button onClick={handleLogout} className="btnLogout">
+            Sair
+          </button>
+        )}
       </div>
     </div>
   );
