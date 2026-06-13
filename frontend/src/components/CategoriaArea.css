@@ -158,63 +158,111 @@
   transform: translateX(4px);
 }
 
-/* ── Filtros ── */
 .catFiltros {
+  display: flex;
+  align-items: flex-end;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin: 20px 40px;
+  padding: 18px 20px;
+  background-color: #222831;
+  border-radius: 22px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+}
+
+.catFiltroGrupo {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.catFiltroGrupo label {
+  color: #aaaaaa;
+  font-size: 13px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.catPeriodoFiltro {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 16px 40px;
-  background-color: #2d333b;
-  flex-wrap: wrap;
 }
 
-.catFiltroLabel {
-  font-size: 13px;
-  color: #aaa;
+.catPeriodoFiltro span {
+  color: #888888;
+  font-size: 14px;
+  font-weight: 500;
 }
 
 .catFiltroData {
-  background: #393e46;
-  border: 1px solid #ffffff20;
-  border-radius: 8px;
-  color: white;
-  padding: 6px 10px;
-  font-size: 13px;
-  cursor: pointer;
+  height: 46px;
+  padding: 0 14px;
+  background-color: #393e46;
+  border: 1px solid #4a4f58;
+  border-radius: 12px;
+  color: #eeeeee;
+  font-size: 14px;
+  transition: all 0.25s ease;
+}
+
+.catFiltroData:hover {
+  border-color: #00adb5;
 }
 
 .catFiltroData:focus {
   outline: none;
   border-color: #00adb5;
+  box-shadow: 0 0 0 3px rgba(0, 173, 181, 0.15);
 }
 
 .catBtnFiltrar {
+  height: 46px;
+  padding: 0 24px;
   background-color: #00adb5;
-  color: white;
   border: none;
-  border-radius: 8px;
-  padding: 6px 16px;
-  font-size: 13px;
+  border-radius: 12px;
+  color: #ffffff;
+  font-size: 14px;
   font-weight: 600;
   cursor: pointer;
-  transition: background-color 0.2s;
+  transition: all 0.25s ease;
 }
+
 .catBtnFiltrar:hover {
-  background-color: #009aa1;
+  background-color: #009da5;
+  color: #222831;
+  transform: translateY(-1px);
 }
 
 .catBtnLimpar {
-  background: none;
-  border: 1px solid #ffffff20;
-  color: #aaa;
-  border-radius: 8px;
-  padding: 6px 12px;
-  font-size: 13px;
+  height: 46px;
+  min-width: 140px;
+  padding: 0 18px;
+  background: transparent;
+  border: 1px solid #555555;
+  border-radius: 12px;
+  color: #aaaaaa;
+  font-size: 14px;
+  font-weight: 500;
   cursor: pointer;
+  transition: all 0.25s ease;
+  visibility: hidden;
+  opacity: 0;
+  pointer-events: none;
 }
+
+.catBtnLimpar.visible {
+  visibility: visible;
+  opacity: 1;
+  pointer-events: all;
+}
+
 .catBtnLimpar:hover {
-  border-color: #ff6b6b;
-  color: #ff6b6b;
+  color: #eeeeee;
+  border-color: #888888;
+  background-color: rgba(255, 255, 255, 0.05);
 }
 
 .catListaWrap {
@@ -224,4 +272,29 @@
   flex-direction: column;
   gap: 12px;
   overflow-y: auto;
+}
+
+@media (max-width: 900px) {
+  .catFiltros {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .catFiltroGrupo {
+    width: 100%;
+  }
+
+  .catPeriodoFiltro {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .catPeriodoFiltro span {
+    display: none;
+  }
+
+  .catBtnFiltrar,
+  .catBtnLimpar {
+    width: 100%;
+  }
 }

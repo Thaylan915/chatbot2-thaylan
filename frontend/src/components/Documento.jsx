@@ -10,9 +10,9 @@ import historico from "../assets/images/historico.svg";
 import api from "../services/api";
 
 const TIPOS = [
-  { valor: "portaria",  label: "Portaria" },
+  { valor: "portaria", label: "Portaria" },
   { valor: "resolucao", label: "Resolução" },
-  { valor: "rod",       label: "ROD" },
+  { valor: "rod", label: "ROD" },
 ];
 
 function fmtDataHora(iso) {
@@ -45,21 +45,21 @@ export default function Documento({
   onReindex,
   onVersoesChange,
 }) {
-  const [confirmando,    setConfirmando]    = useState(false);
-  const [editando,       setEditando]       = useState(false);
-  const [verVersoes,     setVerVersoes]     = useState(false);
-  const [versoes,        setVersoes]        = useState([]);
+  const [confirmando, setConfirmando] = useState(false);
+  const [editando, setEditando] = useState(false);
+  const [verVersoes, setVerVersoes] = useState(false);
+  const [versoes, setVersoes] = useState([]);
   const [loadingVersoes, setLoadingVersoes] = useState(false);
 
-  const [nomeEdit,    setNomeEdit]    = useState(titulo    || "");
-  const [tipoEdit,    setTipoEdit]    = useState(tipoAtual || "portaria");
+  const [nomeEdit, setNomeEdit] = useState(titulo || "");
+  const [tipoEdit, setTipoEdit] = useState(tipoAtual || "portaria");
   const [arquivoEdit, setArquivoEdit] = useState(null);
-  const [salvando,    setSalvando]    = useState(false);
+  const [salvando, setSalvando] = useState(false);
 
   const iconeStatus = status === "pendente" ? pendente : verificado;
 
   function abrirEdicao() {
-    setNomeEdit(titulo    || "");
+    setNomeEdit(titulo || "");
     setTipoEdit(tipoAtual || "portaria");
     setArquivoEdit(null);
     setEditando(true);
@@ -72,7 +72,11 @@ export default function Documento({
       const res = await api.get(`/api/documents/${id}/versoes/`);
       setVersoes(res.data?.versoes || []);
     } catch (e) {
-      alert(e.response?.data?.error || e.response?.statusText || "Erro ao carregar versões");
+      alert(
+        e.response?.data?.error ||
+          e.response?.statusText ||
+          "Erro ao carregar versões",
+      );
     } finally {
       setLoadingVersoes(false);
     }
@@ -85,15 +89,26 @@ export default function Documento({
       setVersoes(res.data?.versoes || []);
       onVersoesChange?.();
     } catch (e) {
-      alert(e.response?.data?.error || e.response?.statusText || "Erro ao ativar versão");
+      alert(
+        e.response?.data?.error ||
+          e.response?.statusText ||
+          "Erro ao ativar versão",
+      );
     }
   }
 
   async function handleSalvar() {
-    if (!nomeEdit.trim()) { alert("O nome não pode ficar vazio."); return; }
+    if (!nomeEdit.trim()) {
+      alert("O nome não pode ficar vazio.");
+      return;
+    }
     setSalvando(true);
     try {
-      await onEdit?.({ nome: nomeEdit.trim(), tipo: tipoEdit, arquivo: arquivoEdit });
+      await onEdit?.({
+        nome: nomeEdit.trim(),
+        tipo: tipoEdit,
+        arquivo: arquivoEdit,
+      });
       setEditando(false);
     } finally {
       setSalvando(false);
@@ -115,9 +130,14 @@ export default function Documento({
 
         {/* Informações — #24 categoria/data, #25 versão ativa */}
         <div className="informacoes">
-          <h4>{titulo}{conteudo ? `: ${conteudo}` : ""}</h4>
+          <h4>
+            {titulo}
+            {conteudo ? `: ${conteudo}` : ""}
+          </h4>
           <div className="inferior">
-            <span>{categoria} • {dataCriacao}</span>
+            <span>
+              {categoria} • {dataCriacao}
+            </span>
             <span>Atualizado: {ultimaAtualizacao}</span>
             {versaoAtiva != null && (
               <span style={{ fontSize: 11, opacity: 0.65 }}>
@@ -130,7 +150,9 @@ export default function Documento({
 
         {/* Ações */}
         <div className="interativo">
-          <div className={`estado ${status === "indexado" ? "indexado" : ""} ${status === "pendente" ? "pendente" : ""}`}>
+          <div
+            className={`estado ${status === "indexado" ? "indexado" : ""} ${status === "pendente" ? "pendente" : ""}`}
+          >
             <span>{status === "pendente" ? "Pendente" : "Indexado"}</span>
             <img src={iconeStatus} alt="Status" />
           </div>
@@ -143,7 +165,10 @@ export default function Documento({
             className="acao reindexar"
             onClick={!reindexando && onReindex ? onReindex : undefined}
             title={reindexando ? "Reindexando..." : "Reindexar documento"}
-            style={{ opacity: reindexando ? 0.4 : 1, cursor: reindexando ? "wait" : "pointer" }}
+            style={{
+              opacity: reindexando ? 0.4 : 1,
+              cursor: reindexando ? "wait" : "pointer",
+            }}
           >
             <img src={recarregar} alt="Reindexar" />
           </div>
@@ -152,7 +177,11 @@ export default function Documento({
             <img src={editarIcon} alt="Editar" />
           </div>
 
-          <div className="acao excluir" onClick={() => setConfirmando(true)} title="Excluir">
+          <div
+            className="acao excluir"
+            onClick={() => setConfirmando(true)}
+            title="Excluir"
+          >
             <img src={lixeira} alt="Excluir" />
           </div>
         </div>
@@ -163,28 +192,84 @@ export default function Documento({
         <div className="overlay">
           <div className="modal">
             <h2>Editar Documento</h2>
+
             <label>
               Nome
-              <input type="text" value={nomeEdit} onChange={(e) => setNomeEdit(e.target.value)} />
+              <input
+                type="text"
+                value={nomeEdit}
+                onChange={(e) => setNomeEdit(e.target.value)}
+              />
             </label>
+
             <label>
-              Tipo
-              <select value={tipoEdit} onChange={(e) => setTipoEdit(e.target.value)}>
-                {TIPOS.map((t) => (
-                  <option key={t.valor} value={t.valor}>{t.label}</option>
-                ))}
-              </select>
+              Tipo do documento
+              <div className="selectWrapper">
+                <select
+                  className="modalSelect"
+                  value={tipoEdit}
+                  onChange={(e) => setTipoEdit(e.target.value)}
+                >
+                  {TIPOS.map((t) => (
+                    <option key={t.valor} value={t.valor}>
+                      {t.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
             </label>
+
             <label>
-              Substituir arquivo PDF (opcional)
-              <input type="file" accept="application/pdf" onChange={(e) => setArquivoEdit(e.target.files?.[0] || null)} />
+              Substituir arquivo PDF
+              <label className="uploadArea">
+                <input
+                  type="file"
+                  accept="application/pdf"
+                  hidden
+                  onChange={(e) => setArquivoEdit(e.target.files?.[0] || null)}
+                />
+
+                <div className="uploadContent">
+                  <div className="uploadFileIcon">PDF</div>
+
+                  {arquivoEdit ? (
+                    <>
+                      <strong>{arquivoEdit.name}</strong>
+
+                      <small>Clique para selecionar outro arquivo</small>
+                    </>
+                  ) : (
+                    <>
+                      <strong>Selecionar novo PDF</strong>
+
+                      <small>Uma nova versão será criada automaticamente</small>
+                    </>
+                  )}
+                </div>
+              </label>
             </label>
-            <p style={{ fontSize: 12, opacity: 0.7, margin: "4px 0 0 0" }}>
-              Enviar um novo PDF cria uma nova versão automaticamente.
-            </p>
+
+            <div className="infoVersao">
+              Ao enviar um novo PDF, uma nova versão do documento será criada
+              automaticamente.
+            </div>
+
             <div className="modalActions">
-              <button className="btnVoltar" onClick={() => setEditando(false)} disabled={salvando}>Cancelar</button>
-              <button className="btnSalvar" onClick={handleSalvar} disabled={salvando}>{salvando ? "Salvando..." : "Salvar"}</button>
+              <button
+                className="btnVoltar"
+                onClick={() => setEditando(false)}
+                disabled={salvando}
+              >
+                Cancelar
+              </button>
+
+              <button
+                className="btnSalvar"
+                onClick={handleSalvar}
+                disabled={salvando}
+              >
+                {salvando ? "Salvando..." : "Salvar"}
+              </button>
             </div>
           </div>
         </div>
@@ -197,7 +282,9 @@ export default function Documento({
             <h2>Versões — {titulo}</h2>
 
             {loadingVersoes && <p>Carregando...</p>}
-            {!loadingVersoes && versoes.length === 0 && <p>Nenhuma versão registrada.</p>}
+            {!loadingVersoes && versoes.length === 0 && (
+              <p>Nenhuma versão registrada.</p>
+            )}
 
             {!loadingVersoes && versoes.length > 0 && (
               <div style={{ maxHeight: 400, overflowY: "auto" }}>
@@ -208,19 +295,47 @@ export default function Documento({
                       padding: "12px 14px",
                       borderRadius: 8,
                       marginBottom: 8,
-                      background: v.ativa ? "rgba(0, 173, 181, 0.15)" : "#393e46",
-                      border: v.ativa ? "1px solid #00adb5" : "1px solid transparent",
+                      background: v.ativa
+                        ? "rgba(0, 173, 181, 0.15)"
+                        : "#393e46",
+                      border: v.ativa
+                        ? "1px solid #00adb5"
+                        : "1px solid transparent",
                     }}
                   >
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12 }}>
+                    <div
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                        gap: 12,
+                      }}
+                    >
                       <div style={{ flex: 1 }}>
                         <div style={{ fontWeight: 600 }}>
                           v{v.numero}
-                          {v.ativa && <span style={{ color: "#00adb5", marginLeft: 8, fontSize: 12 }}>● ATIVA</span>}
+                          {v.ativa && (
+                            <span
+                              style={{
+                                color: "#00adb5",
+                                marginLeft: 8,
+                                fontSize: 12,
+                              }}
+                            >
+                              ● ATIVA
+                            </span>
+                          )}
                         </div>
-                        <div style={{ fontSize: 13, opacity: 0.85, marginTop: 4 }}>{v.nome}</div>
-                        <div style={{ fontSize: 11, opacity: 0.6, marginTop: 4 }}>
-                          {fmtDataHora(v.criada_em)} · {v.qtd_chunks} chunks · {v.tipo}
+                        <div
+                          style={{ fontSize: 13, opacity: 0.85, marginTop: 4 }}
+                        >
+                          {v.nome}
+                        </div>
+                        <div
+                          style={{ fontSize: 11, opacity: 0.6, marginTop: 4 }}
+                        >
+                          {fmtDataHora(v.criada_em)} · {v.qtd_chunks} chunks ·{" "}
+                          {v.tipo}
                         </div>
                       </div>
                       {!v.ativa && (
@@ -239,7 +354,12 @@ export default function Documento({
             )}
 
             <div className="modalActions">
-              <button className="btnVoltar" onClick={() => setVerVersoes(false)}>Fechar</button>
+              <button
+                className="btnVoltar"
+                onClick={() => setVerVersoes(false)}
+              >
+                Fechar
+              </button>
             </div>
           </div>
         </div>
@@ -251,12 +371,19 @@ export default function Documento({
           <div className="modal modalConfirmacao">
             <h2>Confirmar exclusão</h2>
             <p>
-              Tem certeza que deseja excluir o documento <strong>{titulo}</strong>?
-              Esta ação não pode ser desfeita.
+              Tem certeza que deseja excluir o documento{" "}
+              <strong>{titulo}</strong>? Esta ação não pode ser desfeita.
             </p>
             <div className="modalActions">
-              <button className="btnVoltar" onClick={() => setConfirmando(false)}>Cancelar</button>
-              <button className="btnExcluirConfirmar" onClick={handleConfirmar}>Excluir</button>
+              <button
+                className="btnVoltar"
+                onClick={() => setConfirmando(false)}
+              >
+                Cancelar
+              </button>
+              <button className="btnExcluirConfirmar" onClick={handleConfirmar}>
+                Excluir
+              </button>
             </div>
           </div>
         </div>

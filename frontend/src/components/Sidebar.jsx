@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import "./Sidebar.css";
 import logo from "../assets/images/logo_chatbot.svg";
-import hideSidebar from "../assets/images/hide-sidebar.svg";
 import novoChat from "../assets/images/novo_chat.svg";
 import historico from "../assets/images/historico.svg";
 import basedeconhec from "../assets/images/basedeconhecimento.svg";
@@ -17,6 +16,7 @@ export default function Sidebar({ refreshKey } = {}) {
   const [usuario, setUsuario] = useState(null);
   const [conversas, setConversas] = useState([]);
   const [menuAberto, setMenuAberto] = useState(false);
+  const isAtivo = (path) => location.pathname === path;
 
   useEffect(() => {
     if (!authService.isAuthenticated()) {
@@ -81,9 +81,6 @@ export default function Sidebar({ refreshKey } = {}) {
           <img src={logo} className="icon" alt="Logo" />
           <span>ChatBOT</span>
         </div>
-        <div className="direita">
-          <img src={hideSidebar} className="icon" alt="Esconder Sidebar" />
-        </div>
       </div>
 
       <div className="menuTop">
@@ -95,7 +92,7 @@ export default function Sidebar({ refreshKey } = {}) {
         {isAdmin && (
           <>
             <div
-              className="item menu"
+              className={`item menu ${isAtivo("/admin/base-de-conhecimento") ? "ativo" : ""}`}
               onClick={() => navigate("/admin/base-de-conhecimento")}
             >
               <img src={basedeconhec} className="icon" />
@@ -103,7 +100,7 @@ export default function Sidebar({ refreshKey } = {}) {
             </div>
 
             <div
-              className="item menu"
+              className={`item menu ${isAtivo("/admin/categorias") ? "ativo" : ""}`}
               onClick={() => navigate("/admin/categorias")}
             >
               <img src={basedeconhec} className="icon" />
@@ -111,7 +108,7 @@ export default function Sidebar({ refreshKey } = {}) {
             </div>
 
             <div
-              className="item menu"
+              className={`item menu ${isAtivo("/admin/metricas") ? "ativo" : ""}`}
               onClick={() => navigate("/admin/metricas")}
             >
               <img src={metricas} className="icon" />
@@ -119,7 +116,7 @@ export default function Sidebar({ refreshKey } = {}) {
             </div>
 
             <div
-              className="item menu"
+              className={`item menu ${isAtivo("/admin/historico") ? "ativo" : ""}`}
               onClick={() => navigate("/admin/historico")}
             >
               <img src={historico} className="icon" />
@@ -129,32 +126,34 @@ export default function Sidebar({ refreshKey } = {}) {
         )}
       </div>
 
-      <div className="chats">
+      <div className="chatsContainer">
         <div className="miniTitulo">Seus chats</div>
-        {conversas.length === 0 && (
-          <div className="chatItem" style={{ opacity: 0.6, cursor: "default" }}>
-            Nenhuma conversa ainda
-          </div>
-        )}
-        {conversas.map((c) => {
-          const ativo = c.id === conversaAtivaId;
-          return (
-            <div
-              key={c.id}
-              className={`chatItem${ativo ? " ativo" : ""}`}
-              onClick={() => handleSelecionar(c.id)}
-              title={c.titulo}
-              style={{
-                cursor: "pointer",
-                backgroundColor: ativo
-                  ? "rgba(255,255,255,0.06)"
-                  : "transparent",
-              }}
-            >
-              {c.titulo || `Chat ${formatarData(c.iniciada_em)}`}
-            </div>
-          );
-        })}
+
+        <div className="chats">
+          {conversas.length === 0 && (
+            <div className="chatItem">Nenhuma conversa ainda</div>
+          )}
+
+          {conversas.map((c) => {
+            const ativo = c.id === conversaAtivaId;
+            return (
+              <div
+                key={c.id}
+                className={`chatItem${ativo ? " ativo" : ""}`}
+                onClick={() => handleSelecionar(c.id)}
+                title={c.titulo}
+                style={{
+                  cursor: "pointer",
+                  backgroundColor: ativo
+                    ? "rgba(255,255,255,0.06)"
+                    : "transparent",
+                }}
+              >
+                {c.titulo || `Chat ${formatarData(c.iniciada_em)}`}
+              </div>
+            );
+          })}
+        </div>
       </div>
 
       <div className="perfil">
