@@ -102,3 +102,185 @@
 .acao.excluir:hover {
   background-color: #eeeeee;
 }
+
+.modal input[type="text"] {
+  width: 100%;
+
+  padding: 12px;
+
+  background-color: #393e46;
+
+  border: 1px solid #4a4f58;
+  border-radius: 12px;
+
+  color: #eeeeee;
+
+  font-size: 15px;
+
+  box-sizing: border-box;
+
+  transition: all 0.25s ease;
+}
+
+.modal input[type="text"]:focus {
+  outline: none;
+
+  border-color: #00adb5;
+
+  box-shadow: 0 0 0 3px rgba(0, 173, 181, 0.15);
+}
+
+.modal label {
+  display: flex;
+  flex-direction: column;
+
+  gap: 8px;
+
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.selectWrapper {
+  position: relative;
+  width: 100%;
+}
+
+.modalSelect {
+  width: 100%;
+
+  padding: 12px 14px;
+
+  background-color: #393e46;
+  color: #eeeeee;
+
+  border: 1px solid #4a4f58;
+  border-radius: 12px;
+
+  font-size: 15px;
+  font-family: inherit;
+
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+
+  cursor: pointer;
+
+  transition: all 0.25s ease;
+}
+
+.modalSelect:hover {
+  border-color: #00adb5;
+}
+
+.modalSelect:focus {
+  outline: none;
+
+  border-color: #00adb5;
+
+  box-shadow: 0 0 0 3px rgba(0, 173, 181, 0.15);
+}
+
+.selectWrapper::after {
+  content: "v";
+
+  position: absolute;
+
+  right: 15px;
+  top: 50%;
+
+  transform: translateY(-50%);
+
+  color: #00adb5;
+
+  font-size: 18px;
+
+  pointer-events: none;
+}
+
+.uploadArea {
+  display: block;
+
+  cursor: pointer;
+}
+
+.uploadContent {
+  display: flex;
+  flex-direction: column;
+
+  align-items: center;
+  justify-content: center;
+
+  gap: 8px;
+
+  min-height: 120px;
+
+  padding: 20px;
+
+  background-color: #393e46;
+
+  border: 2px dashed rgba(0, 173, 181, 0.4);
+
+  border-radius: 14px;
+
+  transition: all 0.25s ease;
+}
+
+.uploadContent:hover {
+  background-color: #434953;
+
+  border-color: #00adb5;
+}
+
+.uploadFileIcon {
+  width: 60px;
+  height: 60px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  background: rgba(0, 173, 181, 0.15);
+
+  border: 1px solid rgba(0, 173, 181, 0.3);
+
+  border-radius: 12px;
+
+  color: #00adb5;
+
+  font-size: 14px;
+  font-weight: 700;
+
+  letter-spacing: 1px;
+}
+
+.uploadContent strong {
+  color: #eeeeee;
+
+  text-align: center;
+
+  max-width: 100%;
+
+  word-break: break-word;
+}
+
+.uploadContent small {
+  color: #aaaaaa;
+
+  text-align: center;
+}
+
+.infoVersao {
+  padding: 12px;
+
+  border-radius: 12px;
+
+  background: rgba(0, 173, 181, 0.08);
+
+  border: 1px solid rgba(0, 173, 181, 0.2);
+
+  color: #b7f7fa;
+
+  font-size: 13px;
+
+  line-height: 1.5;
+}

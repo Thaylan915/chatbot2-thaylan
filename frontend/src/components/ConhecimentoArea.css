@@ -22,7 +22,7 @@
 }
 
 .btnAdd {
-  background-color: #393e46;
+  background-color: #00adb5;
   color: #eeeeee;
   border: none;
   border-radius: 22px;
@@ -33,7 +33,7 @@
 }
 
 .btnAdd:hover {
-  background-color: #eeeeee;
+  background-color: #00c8d2;
   color: #222831;
 }
 
@@ -100,7 +100,7 @@
 }
 
 .listaScroll::-webkit-scrollbar-thumb {
-  background-color: #eeeeee;
+  background-color: #00adb5;
   border-radius: 10px;
 }
 
@@ -110,7 +110,7 @@
 
 .listaScroll {
   scrollbar-width: thin;
-  scrollbar-color: #eeeeee transparent;
+  scrollbar-color: #00c8d2 transparent;
 }
 
 .btnReindexar {
@@ -279,53 +279,389 @@
     width: 100%;
   }
 }
-/* Filtros #21 e #73 */
+
 .filtrosBar {
   display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 12px 24px;
+  align-items: flex-end;
+  gap: 16px;
   flex-wrap: wrap;
+  margin: 0 20px 20px 20px;
+  padding: 18px 20px;
+  background-color: #222831;
+  border-radius: 22px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+}
+
+.filtroGrupo {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 220px;
+  min-width: 220px;
+  max-width: 220px;
+  flex: 0 0 220px;
+}
+
+.filtroGrupo label {
+  color: #aaaaaa;
+  font-size: 13px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
 .filtroSelect,
 .filtroData {
-  background: #393e46;
+  width: 100%;
+  height: 46px;
+  padding: 0 14px;
+  background-color: #393e46;
   border: 1px solid #4a4f58;
+  border-radius: 12px;
   color: #eeeeee;
-  border-radius: 8px;
-  padding: 8px 12px;
   font-size: 14px;
-  cursor: pointer;
+  transition: all 0.25s ease;
+  box-sizing: border-box;
+}
+
+.filtroSelect:hover,
+.filtroData:hover {
+  border-color: #00adb5;
 }
 
 .filtroSelect:focus,
 .filtroData:focus {
   outline: none;
   border-color: #00adb5;
+  box-shadow: 0 0 0 3px rgba(0, 173, 181, 0.15);
+}
+
+.periodoFiltro {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.periodoFiltro span {
+  color: #888888;
+  font-size: 14px;
+  font-weight: 500;
+  flex-shrink: 0;
+}
+
+/* ÁREA DOS BOTÕES */
+
+.filtroAcoes {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-left: auto;
+  flex-shrink: 0;
 }
 
 .btnFiltrar {
-  background: #00adb5;
-  color: #fff;
+  height: 46px;
+  padding: 0 24px;
+  background-color: #00adb5;
   border: none;
-  border-radius: 8px;
-  padding: 8px 18px;
+  border-radius: 12px;
+  color: white;
   font-size: 14px;
-  cursor: pointer;
   font-weight: 600;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  white-space: nowrap;
 }
 
-.btnFiltrar:hover { background: #009a9e; }
+.btnFiltrar:hover {
+  background-color: #009da5;
+  color: #222831;
+  transform: translateY(-1px);
+}
 
 .btnLimpar {
+  height: 46px;
+  padding: 0 18px;
   background: transparent;
-  color: #aaa;
-  border: 1px solid #555;
-  border-radius: 8px;
-  padding: 8px 14px;
+  border: 1px solid #555555;
+  border-radius: 12px;
+  color: #aaaaaa;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  white-space: nowrap;
+}
+
+.btnLimpar:hover {
+  color: #eeeeee;
+  border-color: #888888;
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+.filtrosBar {
+  display: flex;
+  align-items: flex-end;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin: 0 20px 20px 20px;
+  padding: 18px 20px;
+  background-color: #222831;
+  border-radius: 22px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+}
+
+.filtroGrupo {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 220px;
+  min-width: 220px;
+  max-width: 220px;
+  flex: 0 0 220px;
+}
+
+.filtroGrupo label {
+  color: #aaaaaa;
   font-size: 13px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.filtroSelect,
+.filtroData {
+  width: 100%;
+  height: 46px;
+  padding: 0 14px;
+  background-color: #393e46;
+  border: 1px solid #4a4f58;
+  border-radius: 12px;
+  color: #eeeeee;
+  font-size: 14px;
+  transition: all 0.25s ease;
+  box-sizing: border-box;
+}
+
+.filtroSelect:hover,
+.filtroData:hover {
+  border-color: #00adb5;
+}
+
+.filtroSelect:focus,
+.filtroData:focus {
+  outline: none;
+  border-color: #00adb5;
+  box-shadow: 0 0 0 3px rgba(0, 173, 181, 0.15);
+}
+
+.periodoFiltro {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.periodoFiltro span {
+  color: #888888;
+  font-size: 14px;
+  font-weight: 500;
+  flex-shrink: 0;
+}
+
+.filtroAcoes {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+.btnFiltrar {
+  height: 46px;
+  padding: 0 24px;
+  background-color: #00adb5;
+  border: none;
+  border-radius: 12px;
+  color: white;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.25s ease;
+
+  white-space: nowrap;
+}
+
+.btnFiltrar:hover {
+  background-color: #009da5;
+  transform: translateY(-1px);
+}
+
+.btnLimpar {
+  height: 46px;
+  padding: 0 18px;
+  background: transparent;
+  border: 1px solid #555555;
+  border-radius: 12px;
+  color: #aaaaaa;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  white-space: nowrap;
+}
+
+.btnLimpar:hover {
+  color: #eeeeee;
+  border-color: #888888;
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+@media (max-width: 900px) {
+  .filtrosBar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .filtroGrupo {
+    width: 100%;
+    min-width: 100%;
+    max-width: 100%;
+  }
+
+  .periodoFiltro {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .periodoFiltro span {
+    display: none;
+  }
+
+  .filtroAcoes {
+    margin-left: 0;
+    flex-direction: column;
+  }
+
+  .btnFiltrar,
+  .btnLimpar {
+    width: 100%;
+  }
+}
+
+.selectWrapper {
+  position: relative;
+  width: 100%;
+}
+
+.modalSelect {
+  width: 100%;
+  padding: 12px 14px;
+  background-color: #393e46;
+  color: #eeeeee;
+  border: 1px solid #4a4f58;
+  border-radius: 12px;
+  font-size: 15px;
+  font-family: inherit;
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  transition: all 0.25s ease;
+}
+
+.modalSelect:hover {
+  border-color: #00adb5;
+}
+
+.modalSelect:focus {
+  outline: none;
+  border-color: #00adb5;
+  box-shadow: 0 0 0 3px rgba(0, 173, 181, 0.15);
+}
+
+.selectWrapper::after {
+  content: "⌄";
+  position: absolute;
+  top: 50%;
+  right: 15px;
+  transform: translateY(-50%);
+  color: #00adb5;
+  font-size: 18px;
+  pointer-events: none;
+}
+
+.uploadArea {
+  display: block;
   cursor: pointer;
 }
 
-.btnLimpar:hover { color: #fff; border-color: #888; }
+.uploadContent {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 120px;
+  padding: 20px;
+  background-color: #393e46;
+  border: 2px dashed rgba(0, 173, 181, 0.4);
+  border-radius: 14px;
+  transition: all 0.25s ease;
+}
+
+.uploadContent:hover {
+  background-color: #434953;
+  border-color: #00adb5;
+}
+
+.uploadFileIcon {
+  width: 60px;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  background: rgba(0, 173, 181, 0.15);
+  border: 1px solid rgba(0, 173, 181, 0.3);
+  color: #00adb5;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 1px;
+}
+
+.uploadContent strong {
+  color: #eeeeee;
+  font-size: 15px;
+  text-align: center;
+  max-width: 100%;
+  word-break: break-word;
+}
+
+.uploadContent small {
+  color: #aaaaaa;
+  text-align: center;
+}
+
+.modal input[type="text"] {
+  padding: 12px;
+  background-color: #393e46;
+  border: 1px solid #4a4f58;
+  border-radius: 12px;
+  color: #eeeeee;
+  font-size: 15px;
+  transition: all 0.25s ease;
+}
+
+.modal input[type="text"]:focus {
+  outline: none;
+  border-color: #00adb5;
+  box-shadow: 0 0 0 3px rgba(0, 173, 181, 0.15);
+}
+
+.modal label {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 500;
+}
