@@ -149,37 +149,45 @@ export default function CategoriaArea() {
         </div>
       </div>
 
-      {/* Filtro de período */}
       <div className="catFiltros">
-        <span className="catFiltroLabel">Filtrar por período:</span>
-        <input
-          type="date"
-          value={filtroInicio}
-          onChange={(e) => setFiltroInicio(e.target.value)}
-          className="catFiltroData"
-        />
-        <span style={{ color: "#aaa" }}>até</span>
-        <input
-          type="date"
-          value={filtroFim}
-          onChange={(e) => setFiltroFim(e.target.value)}
-          className="catFiltroData"
-        />
+        <div className="catFiltroGrupo">
+          <label>Período</label>
+
+          <div className="catPeriodoFiltro">
+            <input
+              type="date"
+              value={filtroInicio}
+              onChange={(e) => setFiltroInicio(e.target.value)}
+              className="catFiltroData"
+            />
+
+            <span>até</span>
+
+            <input
+              type="date"
+              value={filtroFim}
+              onChange={(e) => setFiltroFim(e.target.value)}
+              className="catFiltroData"
+            />
+          </div>
+        </div>
+
         <button className="catBtnFiltrar" onClick={handleFiltrar}>
           Filtrar
         </button>
-        {(filtroInicio || filtroFim) && (
-          <button
-            className="catBtnLimpar"
-            onClick={() => {
-              setFiltroInicio("");
-              setFiltroFim("");
-              carregarDocumentos(categoriaSelecionada);
-            }}
-          >
-            ✕ Limpar
-          </button>
-        )}
+
+        <button
+          className={`catBtnLimpar ${
+            filtroInicio || filtroFim ? "visible" : ""
+          }`}
+          onClick={() => {
+            setFiltroInicio("");
+            setFiltroFim("");
+            carregarDocumentos(categoriaSelecionada);
+          }}
+        >
+          Limpar filtros
+        </button>
       </div>
 
       {/* Lista de documentos */}

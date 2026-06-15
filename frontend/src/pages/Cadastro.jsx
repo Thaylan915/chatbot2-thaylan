@@ -6,7 +6,12 @@ import api from "../services/api";
 
 export default function Cadastro() {
   const navigate = useNavigate();
-  const [form, setForm] = useState({ nome: "", email: "", senha: "", confirmarSenha: "" });
+  const [form, setForm] = useState({
+    nome: "",
+    email: "",
+    senha: "",
+    confirmarSenha: "",
+  });
   const [erro, setErro] = useState("");
   const [carregando, setCarregando] = useState(false);
 
@@ -33,7 +38,9 @@ export default function Cadastro() {
       });
       navigate("/");
     } catch (err) {
-      setErro(err.response?.data?.error || "Erro ao cadastrar. Tente novamente.");
+      setErro(
+        err.response?.data?.error || "Erro ao cadastrar. Tente novamente.",
+      );
     } finally {
       setCarregando(false);
     }
@@ -96,14 +103,18 @@ export default function Cadastro() {
               />
             </label>
 
-            {erro && <p style={{ color: "red", marginBottom: "8px" }}>{erro}</p>}
+            {erro && (
+              <p style={{ color: "red", marginBottom: "8px" }}>{erro}</p>
+            )}
 
             <button className="btnEntrar" type="submit" disabled={carregando}>
               {carregando ? "Cadastrando..." : "Cadastrar"}
             </button>
           </form>
 
-          <Link to="/">Voltar para login</Link>
+          <Link className="linkVoltar" to="/">
+            Voltar para login
+          </Link>
         </div>
       </div>
     </div>
