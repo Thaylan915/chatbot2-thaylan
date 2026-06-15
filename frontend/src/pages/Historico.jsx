@@ -34,11 +34,13 @@ export default function Historico() {
   }, []);
 
   function abrirConversa(c) {
+    const id = Number(c?.id);
+    if (!Number.isInteger(id) || id <= 0) return;
     setSelecionada(c);
     setMensagens([]);
     setCarregandoMsgs(true);
     api
-      .get(`/api/chat/${c.id}/historico/`)
+      .get(`/api/chat/${id}/historico/`)
       .then((res) => setMensagens(res.data?.mensagens || []))
       .catch(() => setMensagens([]))
       .finally(() => setCarregandoMsgs(false));
@@ -66,10 +68,15 @@ export default function Historico() {
             <p style={{ color: "#eee", opacity: 0.6 }}>Nenhuma conversa.</p>
           )}
           {conversas.map((c) => (
-            <div
+            <button
+              type="button"
               key={c.id}
               onClick={() => abrirConversa(c)}
               style={{
+                display: "block",
+                width: "100%",
+                textAlign: "left",
+                border: "none",
                 padding: "12px 14px",
                 marginBottom: 8,
                 background:
@@ -89,7 +96,7 @@ export default function Historico() {
               <div style={{ fontSize: 11, opacity: 0.7, marginTop: 2 }}>
                 {c.qtd_mensagens} mensagem(ns)
               </div>
-            </div>
+            </button>
           ))}
         </div>
 

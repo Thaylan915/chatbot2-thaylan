@@ -9,6 +9,7 @@ from django.conf import settings
 def pytest_configure():
     if not settings.configured:
         settings.configure(
+            SECRET_KEY="test-secret-key-not-used-in-production",
             DATABASES={
                 "default": {
                     "ENGINE": "django.db.backends.sqlite3",
