@@ -27,7 +27,9 @@ def backfill(apps, schema_editor):
 
 
 def reverse(apps, schema_editor):
-    pass
+    # Backfill é idempotente e seguro; reverter dados existentes apagaria
+    # versões/links criados por outras migrações posteriores, então o reverso é no-op.
+    return
 
 
 class Migration(migrations.Migration):

@@ -62,8 +62,8 @@ api.interceptors.response.use(
       } catch {
         localStorage.removeItem("access_token");
         localStorage.removeItem("refresh_token");
-        window.location.href = "/";
-        return Promise.reject(error);
+        globalThis.location.href = "/";
+        throw error;
       }
     }
 
@@ -74,10 +74,10 @@ api.interceptors.response.use(
     ) {
       localStorage.removeItem("access_token");
       localStorage.removeItem("refresh_token");
-      window.location.href = "/";
+      globalThis.location.href = "/";
     }
 
-    return Promise.reject(error);
+    throw error;
   }
 );
 

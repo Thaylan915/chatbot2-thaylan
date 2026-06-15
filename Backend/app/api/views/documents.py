@@ -9,6 +9,8 @@ from Backend.app.application.log_action import log_action
 from Backend.app.documents.models import Documento, VersaoDocumento
 from Backend.app.application.document_versioning import ativar_versao
 
+DOCUMENTO_NAO_ENCONTRADO = "Documento não encontrado."
+
 
 class DocumentListView(APIView):
     permission_classes = [IsAuthenticated, IsAdminUser]
@@ -184,7 +186,7 @@ class DocumentMetadataView(APIView):
             doc = Documento.objects.get(id=id_documento)
         except Documento.DoesNotExist:
             return Response(
-                {"error": "Documento não encontrado."},
+                {"error": DOCUMENTO_NAO_ENCONTRADO},
                 status=status.HTTP_404_NOT_FOUND,
             )
 
@@ -259,7 +261,7 @@ class DocumentAdminActionView(APIView):
             doc = Documento.objects.get(id=id_documento)
         except Documento.DoesNotExist:
             return Response(
-                {"error": "Documento não encontrado."},
+                {"error": DOCUMENTO_NAO_ENCONTRADO},
                 status=status.HTTP_404_NOT_FOUND,
             )
 
@@ -312,7 +314,7 @@ class DocumentVersoesView(APIView):
         try:
             doc = Documento.objects.get(id=id_documento)
         except Documento.DoesNotExist:
-            return Response({"error": "Documento não encontrado."}, status=status.HTTP_404_NOT_FOUND)
+            return Response({"error": DOCUMENTO_NAO_ENCONTRADO}, status=status.HTTP_404_NOT_FOUND)
 
         versoes = doc.versoes.all().order_by("-numero")
         data = [

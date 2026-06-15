@@ -12,6 +12,7 @@ Endpoints cobertos:
     POST   /api/documents/<id>/confirm/  — confirmar exclusão com token
 """
 
+import secrets
 from unittest.mock import MagicMock, patch
 
 from django.contrib.auth import get_user_model
@@ -24,6 +25,8 @@ User = get_user_model()
 DOCUMENTS_URL = "/api/documents/"
 DOCUMENT_URL = "/api/documents/{id}/"
 CONFIRM_URL = "/api/documents/{id}/confirm/"
+
+_TEST_PASSWORD = secrets.token_urlsafe(16)
 
 
 def _auth_header(user: User) -> str:
@@ -39,10 +42,10 @@ class TestDocumentListView(APITestCase):
 
     def setUp(self):
         self.admin = User.objects.create_user(
-            username="admin_list", password="pass123", is_staff=True
+            username="admin_list", password=_TEST_PASSWORD, is_staff=True
         )
         self.regular = User.objects.create_user(
-            username="user_list", password="pass123", is_staff=False
+            username="user_list", password=_TEST_PASSWORD, is_staff=False
         )
 
     def test_unauthenticated_returns_401(self):
@@ -90,7 +93,7 @@ class TestDocumentCreateView(APITestCase):
 
     def setUp(self):
         self.admin = User.objects.create_user(
-            username="admin_create", password="pass123", is_staff=True
+            username="admin_create", password=_TEST_PASSWORD, is_staff=True
         )
 
     def test_unauthenticated_returns_401(self):
@@ -157,7 +160,7 @@ class TestDocumentUpdateView(APITestCase):
 
     def setUp(self):
         self.admin = User.objects.create_user(
-            username="admin_update", password="pass123", is_staff=True
+            username="admin_update", password=_TEST_PASSWORD, is_staff=True
         )
 
     def test_unauthenticated_returns_401(self):
@@ -210,7 +213,7 @@ class TestDocumentDeleteView(APITestCase):
 
     def setUp(self):
         self.admin = User.objects.create_user(
-            username="admin_delete", password="pass123", is_staff=True
+            username="admin_delete", password=_TEST_PASSWORD, is_staff=True
         )
 
     def test_unauthenticated_returns_401(self):
@@ -265,7 +268,7 @@ class TestDocumentConfirmDeleteView(APITestCase):
 
     def setUp(self):
         self.admin = User.objects.create_user(
-            username="admin_confirm", password="pass123", is_staff=True
+            username="admin_confirm", password=_TEST_PASSWORD, is_staff=True
         )
 
     def test_unauthenticated_returns_401(self):

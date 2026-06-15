@@ -1,4 +1,4 @@
-from django.db.models import Count, Max
+from django.db.models import Count, Max, OuterRef, Subquery
 
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -23,6 +23,9 @@ from django.utils.dateparse import parse_date
 from django.db.models import Count, Avg
 from django.utils import timezone
 import datetime
+
+CONVERSA_NAO_ENCONTRADA = "Conversa não encontrada."
+
 
 class ChatIniciarView(APIView):
     """
@@ -58,92 +61,101 @@ class ChatPerguntaView(APIView):
     """
     permission_classes = [IsAuthenticated]
 
-    def post(self, request):
-        conversa_id          = request.data.get("conversa_id")
-        question             = request.data.get("question", "").strip()
-        documento_id_filtro  = request.data.get("documento_id_filtro")
-
+    @staticmethod
+    def _validar_question(question):
         if not question:
             return Response(
                 {"error": "O campo 'question' é obrigatório."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
-        if not question or len(question) < 2:
+        if len(question) < 2:
             return Response(
                 {"error": "A pergunta não pode estar vazia ou ser muito curta."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
+        return None
+
+    @staticmethod
+    def _buscar_conversa(conversa_id, user=None):
+        try:
+            qs = Conversa.objects.filter(id=conversa_id)
+            if user is not None:
+                qs = qs.filter(user=user)
+            return qs.get(), None
+        except Conversa.DoesNotExist:
+            return None, Response(
+                {"error": CONVERSA_NAO_ENCONTRADA},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+    def _responder_resposta_direta(self, request, conversa_id, question, intencao):
+        if conversa_id:
+            conversa, err = self._buscar_conversa(conversa_id)
+            if err:
+                return err
+        else:
+            user = request.user if request.user.is_authenticated else None
+            conversa = iniciar_conversa(user=user)
+
+        mensagem = registrar_mensagem(conversa, question)
+        resposta_msg = registrar_resposta(
+            conversa, RESPOSTAS_DIRETAS[intencao], respondida=True,
+        )
+        return Response(
+            {
+                "conversa_id": conversa.id,
+                "mensagem_id": resposta_msg.id,
+                "pergunta_original": mensagem.conteudo_original,
+                "pergunta_processada": mensagem.conteudo_processado,
+                "answer": RESPOSTAS_DIRETAS[intencao],
+                "fontes": [],
+                "citacoes": [],
+                "respondida": True,
+                "intencao": intencao,
+            },
+            status=status.HTTP_200_OK,
+        )
+
+    @staticmethod
+    def _parse_documento_id(valor):
+        if valor is None:
+            return None
+        try:
+            return int(valor)
+        except (TypeError, ValueError):
+            return None
+
+    def post(self, request):
+        conversa_id          = request.data.get("conversa_id")
+        question             = request.data.get("question", "").strip()
+        documento_id_filtro  = self._parse_documento_id(request.data.get("documento_id_filtro"))
+
+        erro = self._validar_question(question)
+        if erro:
+            return erro
 
         intencao = classificar_intencao(question)
-
         if intencao in RESPOSTAS_DIRETAS:
-            if conversa_id:
-                try:
-                    conversa = Conversa.objects.get(id=conversa_id)
-                except Conversa.DoesNotExist:
-                    return Response(
-                        {"error": "Conversa não encontrada."},
-                        status=status.HTTP_404_NOT_FOUND,
-                    )
-            else:
-                user = request.user if request.user.is_authenticated else None
-                conversa = iniciar_conversa(user=user)
+            return self._responder_resposta_direta(request, conversa_id, question, intencao)
 
-            mensagem = registrar_mensagem(conversa, question)
-            resposta_msg = registrar_resposta(
-                conversa,
-                RESPOSTAS_DIRETAS[intencao],
-                respondida=True,  # saudação/agradecimento sempre tem resposta direta
-            )
-
-            return Response(
-                {
-                    "conversa_id": conversa.id,
-                    "mensagem_id": resposta_msg.id,
-                    "pergunta_original": mensagem.conteudo_original,
-                    "pergunta_processada": mensagem.conteudo_processado,
-                    "answer": RESPOSTAS_DIRETAS[intencao],
-                    "fontes": [],
-                    "citacoes": [],
-                    "respondida": True,
-                    "intencao": intencao,
-                },
-                status=status.HTTP_200_OK,
-            )
-
-        # Normaliza o filtro (pode vir como string do front)
-        if documento_id_filtro is not None:
-            try:
-                documento_id_filtro = int(documento_id_filtro)
-            except (TypeError, ValueError):
-                documento_id_filtro = None
-
-        # Busca conversa existente ou cria uma nova (sempre vinculada ao user)
         if conversa_id:
-            try:
-                conversa = Conversa.objects.get(id=conversa_id, user=request.user)
-            except Conversa.DoesNotExist:
-                return Response(
-                    {"error": "Conversa não encontrada."},
-                    status=status.HTTP_404_NOT_FOUND,
-                )
+            conversa, err = self._buscar_conversa(conversa_id, user=request.user)
+            if err:
+                return err
         else:
             conversa = iniciar_conversa(user=request.user)
 
-        # Registra pergunta original (#36) e processada (#37)
         mensagem = registrar_mensagem(conversa, question)
 
         if not conversa.titulo or conversa.titulo == "Nova conversa":
             conversa.titulo = gerar_titulo_conversa(question)
             conversa.save(update_fields=["titulo"])
 
-        # Gera e registra resposta via pipeline RAG
         responder = ChatFactory.make_responder()
         resultado = responder.executar(
             mensagem.conteudo_processado,
             documento_id_filtro=documento_id_filtro,
         )
-        # Captura a Mensagem persistida para expor seu ID (necessário para o feedback)
         resposta_msg = registrar_resposta(
             conversa,
             resultado["resposta"],
@@ -154,7 +166,7 @@ class ChatPerguntaView(APIView):
         return Response(
             {
                 "conversa_id":          conversa.id,
-                "mensagem_id":          resposta_msg.id,  # 2. ADICIONE ESSA LINHA PARA O REACT LER
+                "mensagem_id":          resposta_msg.id,
                 "pergunta_original":    mensagem.conteudo_original,
                 "pergunta_processada":  mensagem.conteudo_processado,
                 "answer":               resultado["resposta"],
@@ -315,7 +327,7 @@ class ChatHistoricoView(APIView):
                 conversa = Conversa.objects.get(id=conversa_id, user=request.user)
         except Conversa.DoesNotExist:
             return Response(
-                {"error": "Conversa não encontrada."},
+                {"error": CONVERSA_NAO_ENCONTRADA},
                 status=status.HTTP_404_NOT_FOUND,
             )
 
@@ -369,26 +381,27 @@ class ConversasUsuarioView(APIView):
     _TITULO_MAX_CHARS = 60
 
     def get(self, request):
+        primeira_pergunta = (
+            Mensagem.objects
+            .filter(conversa=OuterRef("pk"), role="user")
+            .order_by("criada_em")
+            .values("conteudo_original")[:1]
+        )
         conversas = (
             Conversa.objects
             .filter(user=request.user)
             .annotate(
                 ultima_atualizacao=Max("mensagens__criada_em"),
                 total_mensagens=Count("mensagens"),
+                primeira_pergunta=Subquery(primeira_pergunta),
             )
             .order_by("-iniciada_em")
         )
 
         data = []
         for conv in conversas:
-            primeira = (
-                conv.mensagens
-                .filter(role="user")
-                .order_by("criada_em")
-                .first()
-            )
-            if primeira:
-                texto = primeira.conteudo_original.strip()
+            if conv.primeira_pergunta:
+                texto = conv.primeira_pergunta.strip()
                 titulo = texto[: self._TITULO_MAX_CHARS]
                 if len(texto) > self._TITULO_MAX_CHARS:
                     titulo += "…"

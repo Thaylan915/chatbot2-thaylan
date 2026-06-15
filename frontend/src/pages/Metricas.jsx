@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
+import PropTypes from "prop-types";
 import api from "../services/api";
 import Sidebar from "../components/Sidebar";
 
@@ -117,7 +118,7 @@ function exportarCsvUsuarios(usuarios) {
   a.download = `metricas_usuarios_${new Date().toISOString().slice(0, 10)}.csv`;
   document.body.appendChild(a);
   a.click();
-  document.body.removeChild(a);
+  a.remove();
   URL.revokeObjectURL(url);
 }
 
@@ -683,13 +684,13 @@ function CardSerie({ titulo, serie, corTaxa }) {
           marginTop: 8,
         }}
       >
-        {serie.map((p, i) => {
+        {serie.map((p) => {
           const v = p.valor ?? 0;
           const h = p.valor === null ? 4 : Math.max(4, (v / max) * 100);
           const cor = p.valor === null ? "rgba(255,255,255,0.1)" : corTaxa(v);
           return (
             <div
-              key={i}
+              key={p.dia}
               style={{
                 flex: 1,
                 display: "flex",
@@ -739,3 +740,23 @@ const th = {
 const thNum = { ...th, textAlign: "right" };
 const td = { padding: "10px 16px" };
 const tdNum = { ...td, textAlign: "right", fontVariantNumeric: "tabular-nums" };
+
+BarraProgresso.propTypes = {
+  valor: PropTypes.number,
+  cor: PropTypes.string,
+};
+
+ChipAcao.propTypes = {
+  acao: PropTypes.string,
+};
+
+CardConstancia.propTypes = {
+  titulo: PropTypes.string,
+  stats: PropTypes.object,
+};
+
+CardSerie.propTypes = {
+  titulo: PropTypes.string,
+  serie: PropTypes.array,
+  corTaxa: PropTypes.func,
+};

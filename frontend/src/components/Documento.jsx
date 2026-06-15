@@ -1,5 +1,6 @@
 import "./Documento.css";
 import { useState } from "react";
+import PropTypes from "prop-types";
 import doc from "../assets/images/documento.svg";
 import verificado from "../assets/images/verificado.svg";
 import recarregar from "../assets/images/reload.svg";
@@ -157,13 +158,15 @@ export default function Documento({
             <img src={iconeStatus} alt="Status" />
           </div>
 
-          <div className="acao versoes" onClick={abrirVersoes} title="Versões">
+          <button type="button" className="acao versoes" onClick={abrirVersoes} title="Versões">
             <img src={historico} alt="Versões" />
-          </div>
+          </button>
 
-          <div
+          <button
+            type="button"
             className="acao reindexar"
-            onClick={!reindexando && onReindex ? onReindex : undefined}
+            onClick={reindexando ? undefined : onReindex}
+            disabled={reindexando || !onReindex}
             title={reindexando ? "Reindexando..." : "Reindexar documento"}
             style={{
               opacity: reindexando ? 0.4 : 1,
@@ -171,19 +174,20 @@ export default function Documento({
             }}
           >
             <img src={recarregar} alt="Reindexar" />
-          </div>
+          </button>
 
-          <div className="acao editar" onClick={abrirEdicao} title="Editar">
+          <button type="button" className="acao editar" onClick={abrirEdicao} title="Editar">
             <img src={editarIcon} alt="Editar" />
-          </div>
+          </button>
 
-          <div
+          <button
+            type="button"
             className="acao excluir"
             onClick={() => setConfirmando(true)}
             title="Excluir"
           >
             <img src={lixeira} alt="Excluir" />
-          </div>
+          </button>
         </div>
       </div>
 
@@ -391,3 +395,21 @@ export default function Documento({
     </>
   );
 }
+
+Documento.propTypes = {
+  id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+  titulo: PropTypes.string,
+  conteudo: PropTypes.string,
+  categoria: PropTypes.string,
+  dataCriacao: PropTypes.string,
+  ultimaAtualizacao: PropTypes.string,
+  status: PropTypes.string,
+  tipoAtual: PropTypes.string,
+  reindexando: PropTypes.bool,
+  versaoAtiva: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+  totalVersoes: PropTypes.number,
+  onDelete: PropTypes.func,
+  onEdit: PropTypes.func,
+  onReindex: PropTypes.func,
+  onVersoesChange: PropTypes.func,
+};

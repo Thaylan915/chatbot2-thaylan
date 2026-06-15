@@ -17,6 +17,18 @@ img {
   filter: invert(1);
 }
 
+/* Reset de estilo nativo para os botoes que substituiram divs interativos */
+button.item,
+button.chatItem,
+button.perfilInfo {
+  background: none;
+  border: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  width: 100%;
+}
+
 .item.header {
   display: flex;
   justify-content: space-between;

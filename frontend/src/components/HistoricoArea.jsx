@@ -2,7 +2,6 @@ import "./HistoricoArea.css";
 
 import exportar from "../assets/images/export.svg";
 
-import Documento from "./Documento";
 import CardHistorico from "./CardHistorico";
 
 // Dados mockados — serão substituídos pela API futuramente
@@ -149,7 +148,7 @@ export default function HistoricoArea() {
       <div className="filtroHistorico">
         <div className="cardFiltro">
           <div className="espaco">
-            <label for="filtroPeriodo">Periodo</label>
+            <label htmlFor="filtroPeriodo">Periodo</label>
             <select name="filtroPeriodo" id="filtroPeriodo">
               <option value="hoje">Hoje</option>
               <option value="esta-semana">Esta Semana</option>
@@ -160,7 +159,7 @@ export default function HistoricoArea() {
           </div>
 
           <div className="espaco">
-            <label for="filtroUsuario">Usuário</label>
+            <label htmlFor="filtroUsuario">Usuário</label>
             <select name="filtroUsuario" id="filtroUsuario">
               {/* listar usuarios no option */}
               <option value=""></option>

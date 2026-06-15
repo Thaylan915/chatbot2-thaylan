@@ -36,12 +36,14 @@ export default function Historico() {
   }, []);
 
   function abrirConversa(c) {
+    const id = Number(c?.id);
+    if (!Number.isInteger(id) || id <= 0) return;
     setSelecionada(c);
     setMensagens([]);
     setCarregandoMsgs(true);
 
     api
-      .get(`/api/chat/${c.id}/historico/`)
+      .get(`/api/chat/${id}/historico/`)
       .then((res) => setMensagens(res.data?.mensagens || []))
       .catch(() => setMensagens([]))
       .finally(() => setCarregandoMsgs(false));
@@ -88,12 +90,16 @@ export default function Historico() {
             const hover = hoverId === c.id;
 
             return (
-              <div
+              <button
+                type="button"
                 key={c.id}
                 onClick={() => abrirConversa(c)}
                 onMouseEnter={() => setHoverId(c.id)}
                 onMouseLeave={() => setHoverId(null)}
                 style={{
+                  display: "block",
+                  width: "100%",
+                  textAlign: "left",
                   padding: "12px 14px",
                   marginBottom: 10,
                   borderRadius: 12,
@@ -109,6 +115,7 @@ export default function Historico() {
 
                   color: ativo ? "#fff" : "#eee",
 
+                  border: "none",
                   borderLeft: ativo
                     ? "4px solid #00adb5"
                     : "4px solid transparent",
@@ -133,7 +140,7 @@ export default function Historico() {
                 <div style={{ fontSize: 11, opacity: 0.7, marginTop: 2 }}>
                   {c.qtd_mensagens} mensagem(ns)
                 </div>
-              </div>
+              </button>
             );
           })}
         </div>

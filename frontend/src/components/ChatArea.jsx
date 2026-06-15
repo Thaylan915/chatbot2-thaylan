@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import PropTypes from "prop-types";
 import { useLocation } from "react-router-dom";
 import ReactMarkdown from "react-markdown";
 import "./ChatArea.css";
@@ -79,8 +80,6 @@ export default function ChatArea() {
       setMensagens((prev) => [...prev, { role: "user", conteudo: texto }]);
     }
     setCarregando(true);
-
-    const eraNova = !conversaId;
 
     try {
       const payload = { question: texto };
@@ -214,7 +213,7 @@ export default function ChatArea() {
     a.download = nomeArquivo;
     document.body.appendChild(a);
     a.click();
-    document.body.removeChild(a);
+    a.remove();
     URL.revokeObjectURL(url);
   }
 
@@ -354,14 +353,13 @@ export default function ChatArea() {
                 msg.respondida === false &&
                 !ehClarificacao;
 
-              const classeExtra = ehClarificacao
-                ? " clarificacao"
-                : semResposta
-                ? " sem-resposta"
-                : "";
+              let classeExtra = "";
+              if (ehClarificacao) classeExtra = " clarificacao";
+              else if (semResposta) classeExtra = " sem-resposta";
 
+              const chave = msg.id ?? msg._tempId ?? `msg-${i}`;
               return (
-                <div key={i} className={`bolha ${msg.role}${classeExtra}`}>
+                <div key={chave} className={`bolha ${msg.role}${classeExtra}`}>
                   {semResposta && (
                     <div className="sem-resposta-header">
                       <span className="sem-resposta-icone">&#9888;</span>
@@ -539,13 +537,19 @@ function OpcoesClarificacao({ opcoes, onEscolher, desabilitado }) {
   );
 }
 
+OpcoesClarificacao.propTypes = {
+  opcoes: PropTypes.array,
+  onEscolher: PropTypes.func,
+  desabilitado: PropTypes.bool,
+};
+
 function CitacoesArea({ citacoes }) {
   const [aberto, setAberto] = useState(false);
   return (
     <div className="citacoesArea">
       <button className="citacoesToggle" onClick={() => setAberto((v) => !v)} aria-expanded={aberto}>
         <span className="citacoesIcone">&#128196;</span>
-        <span>{citacoes.length} fonte{citacoes.length !== 1 ? "s" : ""} consultada{citacoes.length !== 1 ? "s" : ""}</span>
+        <span>{citacoes.length} fonte{citacoes.length === 1 ? "" : "s"} consultada{citacoes.length === 1 ? "" : "s"}</span>
         <span className="citacoesChevron">{aberto ? "▲" : "▼"}</span>
       </button>
       {aberto && (
@@ -565,3 +569,7 @@ function CitacoesArea({ citacoes }) {
     </div>
   );
 }
+
+CitacoesArea.propTypes = {
+  citacoes: PropTypes.array,
+};

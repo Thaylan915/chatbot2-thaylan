@@ -28,6 +28,24 @@ class UpdateDocument:
         conteudo_arquivo: bytes | None = None,
         nome_arquivo: str | None = None,
     ) -> dict:
+        self._validar_entrada(id_documento, nome, tipo)
+        documento = self._buscar_documento(id_documento)
+
+        novo_nome = nome.strip() if nome else documento.nome
+        novo_tipo = tipo or documento.tipo
+
+        if conteudo_arquivo:
+            return self._criar_nova_versao(
+                documento, novo_nome, novo_tipo, conteudo_arquivo, nome_arquivo,
+            )
+
+        if nome is None and tipo is None:
+            raise ValueError("Nenhum campo para atualizar foi fornecido.")
+
+        return self._atualizar_metadados(documento, nome, tipo, novo_nome, novo_tipo)
+
+    @staticmethod
+    def _validar_entrada(id_documento, nome, tipo):
         if not isinstance(id_documento, int) or id_documento <= 0:
             raise ValueError("ID do documento inválido.")
         if nome is not None and not nome.strip():
@@ -35,44 +53,41 @@ class UpdateDocument:
         if tipo is not None and tipo not in TIPOS_VALIDOS:
             raise ValueError(f"Tipo inválido. Use um dos valores: {', '.join(TIPOS_VALIDOS)}.")
 
+    @staticmethod
+    def _buscar_documento(id_documento):
         try:
-            documento = Documento.objects.get(id=id_documento)
+            return Documento.objects.get(id=id_documento)
         except Documento.DoesNotExist:
             raise LookupError(f"Documento com ID {id_documento} não encontrado.")
 
-        novo_nome = nome.strip() if nome else documento.nome
-        novo_tipo = tipo or documento.tipo
+    @staticmethod
+    def _criar_nova_versao(documento, novo_nome, novo_tipo, conteudo_arquivo, nome_arquivo):
+        caminho = salvar_arquivo_no_disco(
+            conteudo_arquivo, nome_arquivo or f"{novo_nome}.pdf", novo_tipo
+        )
+        chunks_texto = extrair_chunks_do_pdf(caminho)
+        embeddings = gerar_embeddings(chunks_texto) if chunks_texto else []
+        versao = criar_versao(
+            documento=documento,
+            nome=novo_nome,
+            tipo=novo_tipo,
+            caminho_arquivo=caminho,
+            chunks_texto=chunks_texto,
+            embeddings=embeddings,
+            ativar=True,
+        )
+        return {
+            "id": documento.id,
+            "nome": documento.nome,
+            "tipo": documento.tipo,
+            "caminho_arquivo": documento.caminho_arquivo,
+            "versao_ativa": versao.numero,
+            "qtd_chunks": len(chunks_texto),
+            "criou_nova_versao": True,
+        }
 
-        if conteudo_arquivo:
-            # Novo arquivo → nova versão
-            caminho = salvar_arquivo_no_disco(
-                conteudo_arquivo, nome_arquivo or f"{novo_nome}.pdf", novo_tipo
-            )
-            chunks_texto = extrair_chunks_do_pdf(caminho)
-            embeddings = gerar_embeddings(chunks_texto) if chunks_texto else []
-            versao = criar_versao(
-                documento=documento,
-                nome=novo_nome,
-                tipo=novo_tipo,
-                caminho_arquivo=caminho,
-                chunks_texto=chunks_texto,
-                embeddings=embeddings,
-                ativar=True,
-            )
-            return {
-                "id": documento.id,
-                "nome": documento.nome,
-                "tipo": documento.tipo,
-                "caminho_arquivo": documento.caminho_arquivo,
-                "versao_ativa": versao.numero,
-                "qtd_chunks": len(chunks_texto),
-                "criou_nova_versao": True,
-            }
-
-        # Sem arquivo: atualiza só metadados (na versão ativa e no Documento)
-        if nome is None and tipo is None:
-            raise ValueError("Nenhum campo para atualizar foi fornecido.")
-
+    @staticmethod
+    def _atualizar_metadados(documento, nome, tipo, novo_nome, novo_tipo):
         ativa = VersaoDocumento.objects.filter(documento=documento, ativa=True).first()
         if ativa:
             campos_v = []

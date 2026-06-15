@@ -1,3 +1,4 @@
+import PropTypes from "prop-types";
 import "./CardHistorico.css";
 
 export default function CardHistorico({
@@ -28,3 +29,11 @@ export default function CardHistorico({
     </div>
   );
 }
+
+CardHistorico.propTypes = {
+  tituloHistorico: PropTypes.string,
+  conteudoHistorico: PropTypes.string,
+  data: PropTypes.string,
+  hora: PropTypes.string,
+  tituloDocumento: PropTypes.string,
+};
