@@ -193,9 +193,11 @@
   max-width: 72%;
   padding: 12px 16px;
   border-radius: 18px;
-  word-wrap: break-word;
+  overflow-wrap: anywhere;
+  word-break: break-word;
   line-height: 1.6;
   font-size: 15px;
+  min-width: 0;
 }
 
 .bolha.user {

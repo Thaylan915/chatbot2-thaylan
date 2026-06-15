@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import PropTypes from "prop-types";
 import { useLocation, useNavigate } from "react-router-dom";
 import "./Sidebar.css";
 import logo from "../assets/images/logo_chatbot.svg";
@@ -86,45 +87,49 @@ export default function Sidebar({ refreshKey } = {}) {
       </div>
 
       <div className="menuTop">
-        <div className="item menu" onClick={handleNovoChat}>
+        <button type="button" className="item menu" onClick={handleNovoChat}>
           <img src={novoChat} className="icon" alt="Novo Chat" />
           <span>Novo Chat</span>
-        </div>
+        </button>
 
         {isAdmin && (
           <>
-            <div
+            <button
+              type="button"
               className="item menu"
               onClick={() => navigate("/admin/base-de-conhecimento")}
             >
-              <img src={basedeconhec} className="icon" />
+              <img src={basedeconhec} className="icon" alt="" />
               <span>Base de conhecimento</span>
-            </div>
+            </button>
 
             {/* ── NOVO: link para Categorias ── */}
-            <div
+            <button
+              type="button"
               className="item menu"
               onClick={() => navigate("/admin/categorias")}
             >
-              <img src={basedeconhec} className="icon" />
+              <img src={basedeconhec} className="icon" alt="" />
               <span>Categorias</span>
-            </div>
+            </button>
 
-            <div
+            <button
+              type="button"
               className="item menu"
               onClick={() => navigate("/admin/metricas")}
             >
-              <img src={metricas} className="icon" />
+              <img src={metricas} className="icon" alt="" />
               <span>Métricas</span>
-            </div>
+            </button>
 
-            <div
+            <button
+              type="button"
               className="item menu"
               onClick={() => navigate("/admin/historico")}
             >
-              <img src={historico} className="icon" />
+              <img src={historico} className="icon" alt="" />
               <span>Histórico</span>
-            </div>
+            </button>
           </>
         )}
       </div>
@@ -139,7 +144,8 @@ export default function Sidebar({ refreshKey } = {}) {
         {conversas.map((c) => {
           const ativo = c.id === conversaAtivaId;
           return (
-            <div
+            <button
+              type="button"
               key={c.id}
               className={`chatItem${ativo ? " ativo" : ""}`}
               onClick={() => handleSelecionar(c.id)}
@@ -152,7 +158,7 @@ export default function Sidebar({ refreshKey } = {}) {
               }}
             >
               {c.titulo || `Chat ${formatarData(c.iniciada_em)}`}
-            </div>
+            </button>
           );
         })}
       </div>
@@ -169,3 +175,7 @@ export default function Sidebar({ refreshKey } = {}) {
     </div>
   );
 }
+
+Sidebar.propTypes = {
+  refreshKey: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+};

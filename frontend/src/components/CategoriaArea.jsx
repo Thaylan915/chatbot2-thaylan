@@ -116,7 +116,7 @@ export default function CategoriaArea() {
                       {cat.total_documentos}
                       <small>
                         {" "}
-                        documento{cat.total_documentos !== 1 ? "s" : ""}
+                        documento{cat.total_documentos === 1 ? "" : "s"}
                       </small>
                     </span>
                   </div>
@@ -143,7 +143,7 @@ export default function CategoriaArea() {
           <div>
             <h2 style={{ margin: 0 }}>{meta.label}</h2>
             <span className="catSubtitulo">
-              {totalCat} documento{totalCat !== 1 ? "s" : ""}
+              {totalCat} documento{totalCat === 1 ? "" : "s"}
             </span>
           </div>
         </div>

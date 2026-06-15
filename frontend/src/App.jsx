@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import PropTypes from "prop-types";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import Login from "./pages/Login";
 import Cadastro from "./pages/Cadastro";
@@ -37,6 +38,9 @@ function RotaAdmin({ children }) {
   if (estado === "nao-admin") return <Navigate to="/admin" replace />;
   return children;
 }
+
+RotaProtegida.propTypes = { children: PropTypes.node };
+RotaAdmin.propTypes = { children: PropTypes.node };
 
 function App() {
   return (

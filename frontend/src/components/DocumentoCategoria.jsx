@@ -1,5 +1,6 @@
 import "./DocumentoCategoria.css";
 import { useState } from "react";
+import PropTypes from "prop-types";
 import api from "../services/api";
 
 export default function DocumentoCategoria({
@@ -265,3 +266,19 @@ function MetaRow({ label, value, mono }) {
     </div>
   );
 }
+
+DocumentoCategoria.propTypes = {
+  id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+  nome: PropTypes.string,
+  tipo: PropTypes.string,
+  indexado_em: PropTypes.string,
+  versao_ativa: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+  total_versoes: PropTypes.number,
+  corCategoria: PropTypes.string,
+};
+
+MetaRow.propTypes = {
+  label: PropTypes.string,
+  value: PropTypes.any,
+  mono: PropTypes.bool,
+};

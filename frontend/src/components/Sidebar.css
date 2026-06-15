@@ -14,9 +14,6 @@ img {
   width: 28px;
   height: 28px;
   filter: invert(1);
-
-  /* verificar quais não estao no tamanho certo e trocar */
-  /* border: 1px solid red;  */
 }
 
 .item {
@@ -25,6 +22,17 @@ img {
   gap: 10px;
   padding: 10px;
   border-radius: 8px;
+}
+
+button.item,
+button.chatItem,
+button.perfilInfo {
+  background: none;
+  border: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  width: 100%;
 }
 
 .item.menu:hover {
@@ -128,7 +136,9 @@ img {
   .menu {
     font-size: 14px;
   }
-  css.btnLogout {
+}
+
+.btnLogout {
   width: 100%;
   margin-top: 8px;
   padding: 8px 12px;
@@ -145,5 +155,4 @@ img {
 .btnLogout:hover {
   background-color: #00adb5;
   color: #222831;
-}
 }

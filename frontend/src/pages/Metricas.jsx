@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
+import PropTypes from "prop-types";
 import api from "../services/api";
 import Sidebar from "../components/Sidebar";
 
@@ -116,7 +117,7 @@ function exportarCsvUsuarios(usuarios) {
   a.download = `metricas_usuarios_${new Date().toISOString().slice(0, 10)}.csv`;
   document.body.appendChild(a);
   a.click();
-  document.body.removeChild(a);
+  a.remove();
   URL.revokeObjectURL(url);
 }
 
@@ -392,12 +393,12 @@ function CardSerie({ titulo, serie, corTaxa }) {
     <div style={{ ...cardBase, textAlign: "left", flex: "2 1 420px", maxWidth: 700 }}>
       <h3 style={cardLabel}>{titulo}</h3>
       <div style={{ display: "flex", alignItems: "flex-end", gap: 4, height: 100, marginTop: 12 }}>
-        {serie.map((p, i) => {
+        {serie.map((p) => {
           const v = p.valor ?? 0;
           const h = p.valor === null ? 4 : Math.max(4, (v / max) * 100);
           const cor = p.valor === null ? "#444" : corTaxa(v);
           return (
-            <div key={i} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
+            <div key={p.dia} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
               <div
                 title={`${p.dia} — ${p.valor === null ? "sem dados" : v + "%"}`}
                 style={{ width: "100%", height: `${h}%`, background: cor, borderRadius: 3 }}
@@ -418,3 +419,23 @@ const th    = { padding: "10px 12px", fontWeight: 600, color: "#a0a0a0", borderB
 const thNum = { ...th, textAlign: "right" };
 const td    = { padding: "9px 12px" };
 const tdNum = { ...td, textAlign: "right", fontVariantNumeric: "tabular-nums" };
+
+BarraProgresso.propTypes = {
+  valor: PropTypes.number,
+  cor: PropTypes.string,
+};
+
+ChipAcao.propTypes = {
+  acao: PropTypes.string,
+};
+
+CardConstancia.propTypes = {
+  titulo: PropTypes.string,
+  stats: PropTypes.object,
+};
+
+CardSerie.propTypes = {
+  titulo: PropTypes.string,
+  serie: PropTypes.array,
+  corTaxa: PropTypes.func,
+};
