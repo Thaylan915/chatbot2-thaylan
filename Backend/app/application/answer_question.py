@@ -297,12 +297,12 @@ def _detectar_ambiguidade(candidates: List[dict]) -> List[dict]:
 
     top = candidates[:_AMBIG_TOP_N]
     top1_score = top[0]["score"]
-    topN_score = top[-1]["score"]
+    topn_score = top[-1]["score"]
 
     if top1_score < _AMBIG_SCORE_MIN:
         return []  # sem relevância → não é ambiguidade, é falta de resposta
 
-    if top1_score - topN_score > _AMBIG_GAP_MAX:
+    if top1_score - topn_score > _AMBIG_GAP_MAX:
         return []  # top-1 claramente melhor que os demais
 
     docs_distintos = {c["documento_id"] for c in top}
@@ -430,6 +430,53 @@ def _determinar_documento_principal(chunks: List[dict]) -> Optional[dict]:
     }
 
 
+def _normalizar_para_busca(texto: str) -> str:
+    texto = re.sub(r"\s+", " ", texto).strip()
+    texto = texto.replace("–", "-").replace("—", "-")
+    texto = unicodedata.normalize("NFKD", texto)
+    return "".join(ch for ch in texto if not unicodedata.combining(ch))
+
+
+def _extrair_definicao_rod(chunks: List[dict]) -> Optional[str]:
+    for chunk in chunks:
+        conteudo = _normalizar_para_busca(chunk["conteudo"]).lower()
+        if "regulamento da organizacao didatica" not in conteudo:
+            continue
+        if "cursos tecnicos" in conteudo:
+            return "Regulamento da Organização Didática dos Cursos Técnicos do Ifes"
+        if "cursos de graduacao" in conteudo:
+            return "Regulamento da Organização Didática dos Cursos de Graduação do Ifes"
+        return "Regulamento da Organização Didática do Ifes"
+    return None
+
+
+_RESPOSTA_TERMO_RESOLUCAO = (
+    "Resolução, no contexto dos documentos do Ifes, é um ato normativo usado para "
+    "formalizar diretrizes, regras ou decisões institucionais."
+)
+_RESPOSTA_TERMO_PORTARIA = (
+    "Portaria, no contexto dos documentos do Ifes, é um ato administrativo usado para "
+    "registrar decisões, determinações ou providências institucionais."
+)
+
+
+def _resposta_termo_generico(definicao: str, chunks: List[dict]) -> str:
+    if not chunks:
+        return f"{definicao} "
+    trecho = _extrair_trecho(chunks[0]["conteudo"], max_chars=220)
+    return f"{definicao} No documento consultado, o conteúdo mais relevante encontrado foi: {trecho}."
+
+
+def _prefixo_resumo(pergunta: str, nome_documento: str) -> str:
+    if re.search(r"\brod\b", pergunta, flags=re.IGNORECASE):
+        return f"Pelo que encontrei sobre ROD no documento {nome_documento}, "
+    if re.search(r"\bresolucao\b", pergunta, flags=re.IGNORECASE):
+        return f"Pelo que encontrei sobre resoluções no documento {nome_documento}, "
+    if re.search(r"\bportaria\b", pergunta, flags=re.IGNORECASE):
+        return f"Pelo que encontrei sobre portarias no documento {nome_documento}, "
+    return f"Pelo que encontrei no documento {nome_documento}, "
+
+
 def _resposta_local_por_chunks(pergunta: str, chunks: List[dict]) -> str:
     if not chunks:
         return (
@@ -438,51 +485,24 @@ def _resposta_local_por_chunks(pergunta: str, chunks: List[dict]) -> str:
         )
 
     documento_principal = _determinar_documento_principal(chunks)
-    nome_documento = documento_principal["nome"] if documento_principal else chunks[0].get("documento_nome", "documento consultado")
-
-    def normalizar_texto(texto: str) -> str:
-        texto = re.sub(r"\s+", " ", texto).strip()
-        texto = texto.replace("–", "-").replace("—", "-")
-        texto = unicodedata.normalize("NFKD", texto)
-        texto = "".join(ch for ch in texto if not unicodedata.combining(ch))
-        return texto
-
-    def extrair_definicao_direta(termo: str) -> Optional[str]:
-        for chunk in chunks:
-            conteudo = normalizar_texto(chunk["conteudo"])
-            if termo.lower() == "rod" and "regulamento da organizacao didatica" in conteudo.lower():
-                if "cursos tecnicos" in conteudo.lower():
-                    return "Regulamento da Organização Didática dos Cursos Técnicos do Ifes"
-                if "cursos de graduacao" in conteudo.lower() or "cursos de graduação" in conteudo.lower():
-                    return "Regulamento da Organização Didática dos Cursos de Graduação do Ifes"
-                return "Regulamento da Organização Didática do Ifes"
-        return None
+    nome_documento = (
+        documento_principal["nome"] if documento_principal
+        else chunks[0].get("documento_nome", "documento consultado")
+    )
 
     if re.search(r"\brod\b", pergunta, flags=re.IGNORECASE):
-        definicao = extrair_definicao_direta("ROD")
+        definicao = _extrair_definicao_rod(chunks)
         if definicao:
             return (
                 f"ROD significa {definicao}. "
-                "No material consultado, ele é descrito como o documento que estabelece normas aos processos didáticos e pedagógicos do Ifes."
+                "No material consultado, ele é descrito como o documento que estabelece normas "
+                "aos processos didáticos e pedagógicos do Ifes."
             )
 
     if re.search(r"\bresolucao\b", pergunta, flags=re.IGNORECASE):
-        resumo = " "
-        if chunks:
-            trecho = _extrair_trecho(chunks[0]["conteudo"], max_chars=220)
-            resumo = f" No documento consultado, o conteúdo mais relevante encontrado foi: {trecho}."
-        return (
-            f"Resolução, no contexto dos documentos do Ifes, é um ato normativo usado para formalizar diretrizes, regras ou decisões institucionais.{resumo}"
-        )
-
+        return _resposta_termo_generico(_RESPOSTA_TERMO_RESOLUCAO, chunks)
     if re.search(r"\bportaria\b", pergunta, flags=re.IGNORECASE):
-        resumo = " "
-        if chunks:
-            trecho = _extrair_trecho(chunks[0]["conteudo"], max_chars=220)
-            resumo = f" No documento consultado, o conteúdo mais relevante encontrado foi: {trecho}."
-        return (
-            f"Portaria, no contexto dos documentos do Ifes, é um ato administrativo usado para registrar decisões, determinações ou providências institucionais.{resumo}"
-        )
+        return _resposta_termo_generico(_RESPOSTA_TERMO_PORTARIA, chunks)
 
     trechos = []
     for chunk in chunks[:2]:
@@ -497,16 +517,8 @@ def _resposta_local_por_chunks(pergunta: str, chunks: List[dict]) -> str:
             "Não encontrei um trecho suficientemente claro para fechar uma definição completa."
         )
 
-    prefixo = f"Pelo que encontrei no documento {nome_documento}, "
-    if re.search(r"\brod\b", pergunta, flags=re.IGNORECASE):
-        prefixo = f"Pelo que encontrei sobre ROD no documento {nome_documento}, "
-    elif re.search(r"\bresolucao\b", pergunta, flags=re.IGNORECASE):
-        prefixo = f"Pelo que encontrei sobre resoluções no documento {nome_documento}, "
-    elif re.search(r"\bportaria\b", pergunta, flags=re.IGNORECASE):
-        prefixo = f"Pelo que encontrei sobre portarias no documento {nome_documento}, "
-
     return (
-        f"{prefixo}consigo resumir assim: o conteúdo recuperado aponta para este contexto:\n"
+        f"{_prefixo_resumo(pergunta, nome_documento)}consigo resumir assim: o conteúdo recuperado aponta para este contexto:\n"
         + "\n".join(trechos)
         + "\n\nSe quiser, posso refinar a busca com outro termo do documento para deixar a resposta mais precisa."
     )
@@ -571,92 +583,35 @@ class ResponderPergunta:
             pergunta_processada: texto da pergunta já pré-processado.
             documento_id_filtro: ID do documento escolhido pelo usuário após
                                  clarificação (None no primeiro pedido).
-
-        Retorna dict com:
-            - resposta:              str
-            - fontes:                list[dict]  — {id, nome}
-            - citacoes:              list[dict]
-            - respondida:            bool
-            - intencao:              'rag' | 'clarificacao'
-            - opcoes_clarificacao:   list[dict] (apenas quando intencao='clarificacao')
         """
         if not settings.GEMINI_API_KEY:
             return self._sem_resposta(_MENSAGEM_ERRO_API)
 
         try:
-            fetch_k = getattr(settings, "RERANK_FETCH_K", max(settings.TOP_K * 2, settings.TOP_K))
-            top_k_contexto = max(1, min(getattr(settings, "RAG_CONTEXT_TOP_K", 3), settings.TOP_K))
             tipo_prioritario = _tipo_documento_prioritario(pergunta_processada)
+            candidates = self._buscar_candidatos(pergunta_processada, tipo_prioritario)
 
-            # 1) Recupera os trechos mais relevantes via embedding sem estreitar
-            # a busca por tipo de documento ou palavra-chave específica.
-            query_embedding = _obter_embedding_cacheado(
-                self._embedding_provider,
-                pergunta_processada,
-                task_type="retrieval_query",
-            )
-            if tipo_prioritario and hasattr(self._chunk_repo, "buscar_por_tipo_documento"):
-                candidates = self._chunk_repo.buscar_por_tipo_documento(tipo_prioritario, fetch_k)
-            else:
-                candidates = self._chunk_repo.buscar_candidatos(query_embedding, fetch_k)
-                candidates = _priorizar_candidatos_por_tipo(candidates, tipo_prioritario)
-
-            # Filtro opcional por documento (retrocompatibilidade com clientes
-            # que ainda enviem documento_id_filtro). A ambiguidade hoje é
-            # tratada pelo próprio modelo em linguagem natural — ver
-            # _PROMPT_TEMPLATE (regra "ambiguidade").
             if documento_id_filtro is not None:
-                candidates = [
-                    c for c in candidates
-                    if c["documento_id"] == documento_id_filtro
-                ]
+                candidates = [c for c in candidates if c["documento_id"] == documento_id_filtro]
                 if not candidates:
                     return self._sem_resposta(_MENSAGEM_SEM_RESPOSTA)
 
-            # 5. Re-ranking MMR
             chunks = _mmr_rerank(candidates, top_k=settings.TOP_K)
-
-            # 6. Monta contexto e gera resposta
-            contexto = _montar_contexto(chunks)
             prompt = _PROMPT_TEMPLATE.format(
-                contexto=contexto,
+                contexto=_montar_contexto(chunks),
                 pergunta=pergunta_processada,
             )
 
-            genai.configure(api_key=settings.GEMINI_API_KEY)
-            try:
-                model = genai.GenerativeModel(settings.CHAT_MODEL)
-                resposta_texto = model.generate_content(
-                    prompt,
-                    generation_config={
-                        "temperature": 0.2,
-                        "top_p": 0.9,
-                        "max_output_tokens": 2048,
-                    },
-                ).text
-            except Exception as exc:
-                if _is_quota_error(exc):
-                    if tipo_prioritario == "rod":
-                        rod_chunks = _carregar_chunks_rods_para_definicao()
-                        resposta_texto = _resposta_local_por_chunks(pergunta_processada, rod_chunks or chunks)
-                    else:
-                        resposta_texto = _resposta_local_por_chunks(pergunta_processada, chunks)
-                else:
-                    return self._sem_resposta(_MENSAGEM_ERRO_API)
-
-            # 7. Detecta resposta vazia/negativa
+            resposta_texto, erro = self._gerar_resposta_llm(prompt, pergunta_processada, chunks, tipo_prioritario)
+            if erro:
+                return erro
             if _nao_soube_responder(resposta_texto):
                 return self._sem_resposta(_MENSAGEM_SEM_RESPOSTA)
 
-            # 8. Monta fontes (documentos únicos) e citações (trechos individuais)
-            fontes = self._deduplicar_fontes(chunks)
-            citacoes = _construir_citacoes(chunks)
-            documento_principal = _determinar_documento_principal(chunks)
-
             return {
                 "resposta":            resposta_texto,
-                "fontes":              fontes,
-                "citacoes":            citacoes,
+                "fontes":              self._deduplicar_fontes(chunks),
+                "citacoes":            _construir_citacoes(chunks),
                 "respondida":          True,
                 "intencao":            "rag",
                 "opcoes_clarificacao": [],
@@ -666,6 +621,39 @@ class ResponderPergunta:
             if _is_quota_error(exc):
                 return self._sem_resposta(_MENSAGEM_COTA_API)
             return self._sem_resposta(_MENSAGEM_ERRO_API)
+
+    def _buscar_candidatos(self, pergunta_processada, tipo_prioritario):
+        fetch_k = getattr(settings, "RERANK_FETCH_K", max(settings.TOP_K * 2, settings.TOP_K))
+        query_embedding = _obter_embedding_cacheado(
+            self._embedding_provider,
+            pergunta_processada,
+            task_type="retrieval_query",
+        )
+        if tipo_prioritario and hasattr(self._chunk_repo, "buscar_por_tipo_documento"):
+            return self._chunk_repo.buscar_por_tipo_documento(tipo_prioritario, fetch_k)
+        candidates = self._chunk_repo.buscar_candidatos(query_embedding, fetch_k)
+        return _priorizar_candidatos_por_tipo(candidates, tipo_prioritario)
+
+    def _gerar_resposta_llm(self, prompt, pergunta_processada, chunks, tipo_prioritario):
+        genai.configure(api_key=settings.GEMINI_API_KEY)
+        try:
+            model = genai.GenerativeModel(settings.CHAT_MODEL)
+            texto = model.generate_content(
+                prompt,
+                generation_config={
+                    "temperature": 0.2,
+                    "top_p": 0.9,
+                    "max_output_tokens": 2048,
+                },
+            ).text
+            return texto, None
+        except Exception as exc:
+            if not _is_quota_error(exc):
+                return None, self._sem_resposta(_MENSAGEM_ERRO_API)
+            if tipo_prioritario == "rod":
+                rod_chunks = _carregar_chunks_rods_para_definicao()
+                return _resposta_local_por_chunks(pergunta_processada, rod_chunks or chunks), None
+            return _resposta_local_por_chunks(pergunta_processada, chunks), None
 
     # ─── Helpers ──────────────────────────────────────────────────────────────
 

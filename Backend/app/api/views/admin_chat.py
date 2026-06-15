@@ -182,7 +182,6 @@ class AdminMetricsConsistencyView(APIView):
             positivos = respostas.filter(feedback="positive").count()
             negativos = respostas.filter(feedback="negative").count()
             avaliadas = positivos + negativos
-            regeneradas = respostas.filter(foi_reformulada=True).count()
             nao_sucesso = respostas.filter(Q(feedback="negative") | Q(foi_reformulada=True)).count()
 
             sucesso = (
