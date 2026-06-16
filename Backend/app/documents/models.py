@@ -168,7 +168,7 @@ class Mensagem(models.Model):
     role                 = models.CharField(max_length=20, choices=ROLES)
     conteudo_original    = models.TextField()           # pergunta como o usuário digitou (#36)
     conteudo_processado  = models.TextField(blank=True) # pergunta após pré-processamento (#37)
-    feedback             = models.CharField(max_length=10, choices=FEEDBACKS, null=True, blank=True)
+    feedback             = models.CharField(max_length=10, choices=FEEDBACKS, blank=True, default="")
     foi_reformulada      = models.BooleanField(default=False)  # marcador de "refatoração" (regenerar resposta)
     fontes               = models.ManyToManyField(      # documentos usados na resposta RAG
                                Documento,
@@ -176,7 +176,7 @@ class Mensagem(models.Model):
                                related_name="mensagens_origem",
                            )
     nota                 = models.IntegerField(null=True, blank=True, help_text="Nota de 1 a 5, ou 1 para Like e -1 para Dislike")
-    comentario           = models.TextField(null=True, blank=True)
+    comentario           = models.TextField(blank=True, default="")
     respondida           = models.BooleanField(
         null=True, blank=True,
         help_text=(
