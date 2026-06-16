@@ -8,14 +8,14 @@ from django.db import migrations
 
 
 def backfill(apps, schema_editor):
-    Documento = apps.get_model("documents", "Documento")
-    VersaoDocumento = apps.get_model("documents", "VersaoDocumento")
-    ChunkDocumento = apps.get_model("documents", "ChunkDocumento")
+    documento_model = apps.get_model("documents", "Documento")
+    versao_model = apps.get_model("documents", "VersaoDocumento")
+    chunk_model = apps.get_model("documents", "ChunkDocumento")
 
-    for doc in Documento.objects.all():
+    for doc in documento_model.objects.all():
         if doc.versoes.exists():
             continue
-        v1 = VersaoDocumento.objects.create(
+        v1 = versao_model.objects.create(
             documento=doc,
             numero=1,
             nome=doc.nome,
@@ -23,7 +23,7 @@ def backfill(apps, schema_editor):
             caminho_arquivo=doc.caminho_arquivo,
             ativa=True,
         )
-        ChunkDocumento.objects.filter(documento=doc, versao__isnull=True).update(versao=v1)
+        chunk_model.objects.filter(documento=doc, versao__isnull=True).update(versao=v1)
 
 
 def reverse(apps, schema_editor):

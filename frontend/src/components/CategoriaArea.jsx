@@ -92,9 +92,7 @@ export default function CategoriaArea() {
         </div>
 
         <div className="catGrid">
-          {carregandoCats && (
-            <p style={{ padding: 24, opacity: 0.6 }}>Carregando...</p>
-          )}
+          {carregandoCats && <p className="catMensagem">Carregando...</p>}
           {!carregandoCats &&
             categorias.map((cat) => {
               const m = CATEGORIAS_META[cat.tipo] || {
@@ -141,7 +139,7 @@ export default function CategoriaArea() {
             {meta.sigla}
           </div>
           <div>
-            <h2 style={{ margin: 0 }}>{meta.label}</h2>
+            <h2>{meta.label}</h2>
             <span className="catSubtitulo">
               {totalCat} documento{totalCat === 1 ? "" : "s"}
             </span>
@@ -151,10 +149,11 @@ export default function CategoriaArea() {
 
       <div className="catFiltros">
         <div className="catFiltroGrupo">
-          <label>Período</label>
+          <label htmlFor="catFiltroPeriodoInicio">Período</label>
 
           <div className="catPeriodoFiltro">
             <input
+              id="catFiltroPeriodoInicio"
               type="date"
               value={filtroInicio}
               onChange={(e) => setFiltroInicio(e.target.value)}
@@ -193,10 +192,10 @@ export default function CategoriaArea() {
       {/* Lista de documentos */}
       <div className="catListaWrap">
         {carregandoDocs && (
-          <p style={{ padding: 24, opacity: 0.6 }}>Carregando documentos...</p>
+          <p className="catMensagem">Carregando documentos...</p>
         )}
         {!carregandoDocs && documentos.length === 0 && (
-          <p style={{ padding: 24, opacity: 0.6 }}>
+          <p className="catMensagem">
             Nenhum documento encontrado nessa categoria.
           </p>
         )}

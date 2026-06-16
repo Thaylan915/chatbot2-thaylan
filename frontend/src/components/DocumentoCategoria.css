@@ -130,6 +130,14 @@
   flex-shrink: 0;
 }
 
+.catModalTituloIco.acao {
+  background: #7c6af7;
+}
+
+.catCarregando {
+  opacity: 0.6;
+}
+
 .catModalDoc {
   margin: 0;
   font-size: 13px;

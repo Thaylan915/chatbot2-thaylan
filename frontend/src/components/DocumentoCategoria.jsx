@@ -3,6 +3,19 @@ import { useState } from "react";
 import PropTypes from "prop-types";
 import api from "../services/api";
 
+function fmtDataHora(iso) {
+  if (!iso) return "—";
+  try {
+    const d = new Date(iso);
+    return `${d.toLocaleDateString("pt-BR")} ${d.toLocaleTimeString("pt-BR", {
+      hour: "2-digit",
+      minute: "2-digit",
+    })}`;
+  } catch {
+    return "—";
+  }
+}
+
 export default function DocumentoCategoria({
   id,
   nome,
@@ -59,19 +72,6 @@ export default function DocumentoCategoria({
     }
   }
 
-  function fmtDataHora(iso) {
-    if (!iso) return "—";
-    try {
-      const d = new Date(iso);
-      return `${d.toLocaleDateString("pt-BR")} ${d.toLocaleTimeString("pt-BR", {
-        hour: "2-digit",
-        minute: "2-digit",
-      })}`;
-    } catch {
-      return "—";
-    }
-  }
-
   return (
     <>
       <div className="docCat" style={{ "--cat-cor": corCategoria }}>
@@ -120,10 +120,10 @@ export default function DocumentoCategoria({
               >
                 M
               </span>
-              Metadados
+              <span>Metadados</span>
             </h3>
 
-            {loadingMeta && <p style={{ opacity: 0.6 }}>Carregando...</p>}
+            {loadingMeta && <p className="catCarregando">Carregando...</p>}
 
             {metadata && (
               <div className="metaGrid">
@@ -188,13 +188,8 @@ export default function DocumentoCategoria({
         <div className="catOverlay">
           <div className="catModal">
             <h3 className="catModalTitulo">
-              <span
-                className="catModalTituloIco"
-                style={{ background: "#7c6af7" }}
-              >
-                A
-              </span>
-              Ação Administrativa
+              <span className="catModalTituloIco acao">A</span>
+              <span>Ação Administrativa</span>
             </h3>
             <p className="catModalDoc">
               Documento: <strong>{nome}</strong>
@@ -207,7 +202,7 @@ export default function DocumentoCategoria({
             ) : (
               <>
                 <label className="catLabel">
-                  Tipo de ação
+                  <span>Tipo de ação</span>
                   <select
                     className="catSelect"
                     value={acao}
@@ -221,7 +216,7 @@ export default function DocumentoCategoria({
                 </label>
 
                 <label className="catLabel">
-                  Detalhes (opcional)
+                  <span>Detalhes (opcional)</span>
                   <textarea
                     className="catTextarea"
                     rows={3}

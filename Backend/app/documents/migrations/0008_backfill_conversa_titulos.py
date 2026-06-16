@@ -25,12 +25,12 @@ def _gerar_titulo(pergunta: str, max_palavras: int = 8) -> str:
 
 
 def forwards(apps, schema_editor):
-    Conversa = apps.get_model("documents", "Conversa")
-    Mensagem = apps.get_model("documents", "Mensagem")
+    conversa_model = apps.get_model("documents", "Conversa")
+    mensagem_model = apps.get_model("documents", "Mensagem")
 
-    for conversa in Conversa.objects.filter(titulo=""):
+    for conversa in conversa_model.objects.filter(titulo=""):
         primeira_pergunta = (
-            Mensagem.objects.filter(conversa_id=conversa.id, role="user")
+            mensagem_model.objects.filter(conversa_id=conversa.id, role="user")
             .order_by("criada_em")
             .values_list("conteudo_original", flat=True)
             .first()
@@ -40,8 +40,8 @@ def forwards(apps, schema_editor):
 
 
 def backwards(apps, schema_editor):
-    Conversa = apps.get_model("documents", "Conversa")
-    Conversa.objects.all().update(titulo="")
+    conversa_model = apps.get_model("documents", "Conversa")
+    conversa_model.objects.all().update(titulo="")
 
 
 class Migration(migrations.Migration):
