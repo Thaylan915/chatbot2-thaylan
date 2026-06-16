@@ -1,175 +1,159 @@
+/* ── Área principal ── */
 .histArea {
   flex: 1;
-  min-height: 100vh;
+  display: flex;
+  overflow: hidden;
   background-color: #393e46;
-  color: white;
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
 }
 
-/* TOPO */
-.topo {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  background-color: #222831;
-  padding: 20px 40px;
-  flex-wrap: wrap;
-  gap: 10px;
-}
-
-.topo h2 {
-  font-size: 32px;
-  margin: 0;
-}
-
-.btnExportar {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-
-  background-color: #393e46;
-  color: #eeeeee;
-  border: none;
-  border-radius: 22px;
-  cursor: pointer;
-  font-weight: bold;
-  font-size: 18px;
-  padding: 10px 20px;
-}
-
-.btnExportar img {
-  width: 18px;
-  height: 18px;
-  filter: invert();
-}
-
-.btnExportar:hover {
-  background-color: #eeeeee;
-  color: #222831;
-}
-
-.btnExportar:hover img {
-  filter: invert(0);
-}
-
-/* FILTRO */
-.filtroHistorico {
-  display: flex;
-  justify-content: center;
-  padding: 0 20px;
-}
-
-.cardFiltro {
-  width: 100%;
-  background-color: #222831;
-  border-radius: 22px;
-  padding: 15px;
-
-  display: flex;
-  align-items: center;
-  gap: 20px;
-  flex-wrap: wrap;
-}
-
-.espaco {
-  display: flex;
-  flex-direction: column;
-  flex: 1;
-  min-width: 180px;
-}
-
-.espaco label {
-  font-size: 18px;
-  margin-bottom: 5px;
-}
-
-.espaco select {
-  height: 45px;
-  width: 100%;
-  padding: 0 10px;
-  border-radius: 10px;
-  border: none;
-  background-color: #ffffff;
-  color: #222831;
-  font-size: 16px;
-  font-weight: bold;
-}
-
-.espaco:last-child {
-  flex: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.btnFiltrar {
-  height: 45px;
-  padding: 0 25px;
-  border-radius: 10px;
-  font-size: 18px;
-  border: none;
-  background-color: #ffffff;
-  color: #222831;
-  font-weight: bold;
-  cursor: pointer;
-  white-space: nowrap;
-}
-
-.btnFiltrar:hover {
-  background-color: #393e46;
-  color: #ffffff;
-}
-
-/* HISTÓRICOS (SCROLL) */
-.areaHistoricos {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 20px;
-  padding: 0 20px 20px;
-
+/* ── Lista de conversas ── */
+.histLista {
+  width: 360px;
+  border-right: 1px solid rgba(255, 255, 255, 0.06);
   overflow-y: auto;
-  min-height: 0;
+  padding: 16px;
+  background-color: #393e46;
 }
 
-.areaHistoricos::-webkit-scrollbar {
+.histTitulo {
+  color: #00adb5;
+  font-family: "Poppins", sans-serif;
+  margin-bottom: 16px;
+  font-size: 20px;
+}
+
+.histMsg {
+  color: #eeeeee;
+}
+
+.histMsgErro {
+  color: #ff5555;
+}
+
+.histMsgVazio {
+  color: #eeeeee;
+  opacity: 0.6;
+}
+
+.histConversa {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 12px 14px;
+  margin-bottom: 10px;
+  border: none;
+  border-left: 4px solid transparent;
+  border-radius: 12px;
+  cursor: pointer;
+  font-family: "Poppins", sans-serif;
+  background-color: #222831;
+  color: #eeeeee;
+  transition: all 0.25s ease;
+}
+
+.histConversa:not(.ativa):hover {
+  background-color: #2f3640;
+  transform: translateX(4px);
+}
+
+.histConversa.ativa {
+  background-color: #00adb5;
+  color: #ffffff;
+  border-left: 4px solid #00adb5;
+}
+
+.histConversaTitulo {
+  font-weight: 600;
+  font-size: 14px;
+  margin-bottom: 4px;
+}
+
+.histConversaMeta {
+  font-size: 12px;
+  opacity: 0.8;
+}
+
+.histConversaQtd {
+  font-size: 11px;
+  opacity: 0.7;
+  margin-top: 2px;
+}
+
+/* ── Detalhes da conversa ── */
+.histDetalhes {
+  flex: 1;
+  overflow-y: auto;
+  padding: 24px;
+}
+
+.histPlaceholder {
+  color: #eeeeee;
+  opacity: 0.6;
+  font-family: "Poppins", sans-serif;
+}
+
+.histDetalhesTitulo {
+  color: #00adb5;
+  font-family: "Poppins", sans-serif;
+}
+
+.histDetalhesMeta {
+  color: #eeeeee;
+  font-family: "Poppins", sans-serif;
+  opacity: 0.7;
+}
+
+.histDivisor {
+  border: none;
+  height: 1px;
+  background-color: #222831;
+  margin: 16px 0;
+}
+
+.histBolha {
+  max-width: 700px;
+  padding: 10px 14px;
+  border-radius: 12px;
+  font-family: "Poppins", sans-serif;
+  color: #ffffff;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.histBolha.user {
+  margin: 8px 0 8px auto;
+  background: #00adb5;
+}
+
+.histBolha.assistant {
+  margin: 8px auto 8px 0;
+  background: #222831;
+}
+
+.histFeedback {
+  font-size: 11px;
+  opacity: 0.8;
+  margin-top: 4px;
+}
+
+/* ── Scrollbars ── */
+.histLista::-webkit-scrollbar,
+.histDetalhes::-webkit-scrollbar {
   width: 6px;
 }
 
-.areaHistoricos::-webkit-scrollbar-thumb {
-  background-color: #eeeeee;
+.histLista::-webkit-scrollbar-track,
+.histDetalhes::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.histLista::-webkit-scrollbar-thumb,
+.histDetalhes::-webkit-scrollbar-thumb {
+  background: #00adb5;
   border-radius: 10px;
 }
 
-/* RESPONSIVO */
-@media (max-width: 768px) {
-  .topo {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-
-  .btnExportar {
-    width: 100%;
-  }
-
-  .cardFiltro {
-    flex-direction: column;
-    align-items: stretch;
-  }
-
-  .espaco {
-    width: 100%;
-  }
-
-  .espaco:last-child {
-    justify-content: flex-start;
-  }
-
-  .btnFiltrar {
-    width: 100%;
-  }
+.histLista::-webkit-scrollbar-thumb:hover,
+.histDetalhes::-webkit-scrollbar-thumb:hover {
+  background: #00c8d2;
 }

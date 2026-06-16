@@ -1,219 +1,123 @@
 import "./HistoricoArea.css";
+import { useEffect, useState } from "react";
+import api from "../services/api";
 
-import exportar from "../assets/images/export.svg";
-
-import CardHistorico from "./CardHistorico";
-
-// Dados mockados — serão substituídos pela API futuramente
-const historicos = [
-  {
-    tituloHistorico: "Estudo de caso",
-    conteudoHistorico:
-      "Análise detalhada sobre diferentes abordagens utilizadas no desenvolvimento de sistemas modernos e suas aplicações práticas.",
-    data: "10/04/26",
-    hora: "08:30",
-    tituloDocumento: "Engenharia de Software",
-  },
-  {
-    tituloHistorico: "Anotação pessoal",
-    conteudoHistorico:
-      "Reflexões sobre aprendizado contínuo na área de tecnologia e a importância de manter a prática constante no desenvolvimento.",
-    data: "11/04/26",
-    hora: "21:10",
-    tituloDocumento: "Carreira em TI",
-  },
-  {
-    tituloHistorico: "Resumo técnico",
-    conteudoHistorico:
-      "Descrição dos principais conceitos relacionados a bancos de dados, incluindo modelagem, normalização e consultas SQL.",
-    data: "12/04/26",
-    hora: "15:45",
-    tituloDocumento: "Banco de Dados",
-  },
-  {
-    tituloHistorico: "Pesquisa extensa",
-    conteudoHistorico:
-      "Este documento apresenta um estudo aprofundado sobre inteligência artificial, abordando desde conceitos básicos até aplicações avançadas em diferentes áreas como saúde, educação e indústria, destacando desafios e oportunidades futuras.",
-    data: "13/04/26",
-    hora: "10:20",
-    tituloDocumento: "Inteligência Artificial",
-  },
-  {
-    tituloHistorico: "Material de apoio",
-    conteudoHistorico:
-      "Conteúdo utilizado como base para estudos, contendo exemplos práticos e exercícios para fixação do aprendizado.",
-    data: "14/04/26",
-    hora: "17:00",
-    tituloDocumento: "Algoritmos",
-  },
-];
-
-// Alterar a função implementando o nome do usuário no PDF
-
-async function exportarPDF(dados) {
-  // Importa jsPDF dinamicamente (evita aumentar o bundle inicial)
-  const { jsPDF } =
-    await import("https://cdn.jsdelivr.net/npm/jspdf@2.5.1/+esm");
-
-  const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
-  const largura = doc.internal.pageSize.getWidth();
-  const altura = doc.internal.pageSize.getHeight();
-  const margemEsq = 15;
-  const margemDir = largura - 15;
-  const larguraUtil = margemDir - margemEsq;
-  let y = 20;
-
-  // ── Cabeçalho ──────────────────────────────────────────────
-  doc.setFillColor(34, 40, 49); // #222831
-  doc.rect(0, 0, largura, 28, "F");
-
-  doc.setTextColor(238, 238, 238);
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(18);
-  doc.text("Histórico de Conversas", margemEsq, 17);
-
-  const dataHoje = new Date().toLocaleDateString("pt-BR");
-  doc.setFontSize(9);
-  doc.setFont("helvetica", "normal");
-  doc.text(`Gerado em: ${dataHoje}`, margemDir, 17, { align: "right" });
-
-  y = 38;
-
-  // ── Cards ──────────────────────────────────────────────────
-  dados.forEach((item) => {
-    const linhasConteudo = doc.splitTextToSize(
-      item.conteudoHistorico,
-      larguraUtil - 6,
-    );
-    const alturaCard = 10 + 7 + linhasConteudo.length * 5 + 10;
-
-    // Nova página se necessário
-    if (y + alturaCard > altura - 15) {
-      doc.addPage();
-      y = 20;
-    }
-
-    // Fundo do card
-    doc.setFillColor(57, 62, 70); // #393e46
-    doc.roundedRect(margemEsq, y, larguraUtil, alturaCard, 3, 3, "F");
-
-    // Título do histórico
-    doc.setTextColor(238, 238, 238);
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(11);
-    doc.text(item.tituloHistorico, margemEsq + 4, y + 8);
-
-    // Data e hora (alinhados à direita)
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(9);
-    doc.setTextColor(180, 180, 180);
-    doc.text(`${item.data}  ${item.hora}`, margemDir - 4, y + 8, {
-      align: "right",
-    });
-
-    // Conteúdo
-    doc.setTextColor(220, 220, 220);
-    doc.setFontSize(9);
-    doc.setFont("helvetica", "normal");
-    doc.text(linhasConteudo, margemEsq + 4, y + 16);
-
-    // Rodapé do card — nome do documento
-    const yRodape = y + alturaCard - 7;
-    doc.setDrawColor(80, 85, 93);
-    doc.line(margemEsq + 4, yRodape - 2, margemDir - 4, yRodape - 2);
-    doc.setTextColor(150, 200, 255);
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(9);
-    doc.text(item.tituloDocumento, margemEsq + 4, yRodape + 3);
-
-    y += alturaCard + 6;
-  });
-
-  // ── Salva na pasta Downloads do navegador ─────────────────
-  const nomeArquivo = `historico_${new Date().toISOString().slice(0, 10)}.pdf`;
-  doc.save(nomeArquivo);
+function formatarDataHora(iso) {
+  if (!iso) return "—";
+  try {
+    const d = new Date(iso);
+    return `${d.toLocaleDateString("pt-BR")} ${d.toLocaleTimeString("pt-BR", {
+      hour: "2-digit",
+      minute: "2-digit",
+    })}`;
+  } catch {
+    return "—";
+  }
 }
 
 export default function HistoricoArea() {
+  const [conversas, setConversas] = useState([]);
+  const [carregando, setCarregando] = useState(true);
+  const [erro, setErro] = useState(null);
+  const [selecionada, setSelecionada] = useState(null);
+  const [mensagens, setMensagens] = useState([]);
+  const [carregandoMsgs, setCarregandoMsgs] = useState(false);
+
+  useEffect(() => {
+    api
+      .get("/api/admin/conversas/")
+      .then((res) => setConversas(res.data?.conversas || []))
+      .catch((e) =>
+        setErro(e.response?.data?.error || "Erro ao carregar conversas"),
+      )
+      .finally(() => setCarregando(false));
+  }, []);
+
+  function abrirConversa(c) {
+    const id = Number(c?.id);
+    if (!Number.isInteger(id) || id <= 0) return;
+    setSelecionada(c);
+    setMensagens([]);
+    setCarregandoMsgs(true);
+
+    api
+      .get(`/api/chat/${id}/historico/`)
+      .then((res) => setMensagens(res.data?.mensagens || []))
+      .catch(() => setMensagens([]))
+      .finally(() => setCarregandoMsgs(false));
+  }
+
+  const isAtiva = (id) => selecionada?.id === id;
+
   return (
     <div className="histArea">
-      <div className="topo">
-        <h2>Histórico</h2>
-        <button className="btnExportar" onClick={() => exportarPDF(historicos)}>
-          <img src={exportar} alt="Exportar" />
-          Exportar
-        </button>
+      {/* LISTA DE CONVERSAS */}
+      <div className="histLista">
+        <h2 className="histTitulo">Todas as conversas</h2>
+
+        {carregando && <p className="histMsg">Carregando...</p>}
+        {erro && <p className="histMsgErro">{erro}</p>}
+        {!carregando && !erro && conversas.length === 0 && (
+          <p className="histMsgVazio">Nenhuma conversa.</p>
+        )}
+
+        {conversas.map((c) => (
+          <button
+            type="button"
+            key={c.id}
+            onClick={() => abrirConversa(c)}
+            className={`histConversa${isAtiva(c.id) ? " ativa" : ""}`}
+          >
+            <div className="histConversaTitulo">
+              {c.titulo || `Conversa #${c.id}`}
+            </div>
+            <div className="histConversaMeta">
+              {c.usuario} • {formatarDataHora(c.iniciada_em)}
+            </div>
+            <div className="histConversaQtd">
+              {c.qtd_mensagens} mensagem(ns)
+            </div>
+          </button>
+        ))}
       </div>
 
-      <div className="filtroHistorico">
-        <div className="cardFiltro">
-          <div className="espaco">
-            <label htmlFor="filtroPeriodo">Periodo</label>
-            <select name="filtroPeriodo" id="filtroPeriodo">
-              <option value="hoje">Hoje</option>
-              <option value="esta-semana">Esta Semana</option>
-              <option value="este-mes">Este Mês</option>
-              <option value="este-ano">Este Ano</option>
-              <option value="todo-periodo">Todo o Periodo</option>
-            </select>
-          </div>
+      {/* DETALHES */}
+      <div className="histDetalhes">
+        {!selecionada && (
+          <p className="histPlaceholder">
+            Selecione uma conversa à esquerda para visualizar.
+          </p>
+        )}
 
-          <div className="espaco">
-            <label htmlFor="filtroUsuario">Usuário</label>
-            <select name="filtroUsuario" id="filtroUsuario">
-              {/* listar usuarios no option */}
-              <option value=""></option>
-            </select>
-          </div>
+        {selecionada && (
+          <>
+            <h2 className="histDetalhesTitulo">{selecionada.titulo}</h2>
 
-          <div className="espaco">
-            <button className="btnFiltrar">Filtrar</button>
-          </div>
-        </div>
-      </div>
+            <p className="histDetalhesMeta">
+              Usuário: <strong>{selecionada.usuario}</strong> ·{" "}
+              {formatarDataHora(selecionada.iniciada_em)}
+            </p>
 
-      <div className="areaHistoricos">
-        {/* fazer lógica de listagem dos historicos de chat do usuário filtrado */}
+            <hr className="histDivisor" />
 
-        <CardHistorico
-          tituloHistorico="Estudo de caso"
-          conteudoHistorico="Análise detalhada sobre diferentes abordagens utilizadas no desenvolvimento de sistemas modernos e suas aplicações práticas."
-          data="10/04/26"
-          hora="08:30"
-          tituloDocumento="Engenharia de Software"
-        />
+            {carregandoMsgs && <p className="histMsg">Carregando mensagens...</p>}
 
-        <CardHistorico
-          tituloHistorico="Anotação pessoal"
-          conteudoHistorico="Reflexões sobre aprendizado contínuo na área de tecnologia e a importância de manter a prática constante no desenvolvimento."
-          data="11/04/26"
-          hora="21:10"
-          tituloDocumento="Carreira em TI"
-        />
+            {!carregandoMsgs &&
+              mensagens.map((m) => (
+                <div key={m.id} className={`histBolha ${m.role}`}>
+                  {m.conteudo_original}
 
-        <CardHistorico
-          tituloHistorico="Resumo técnico"
-          conteudoHistorico="Descrição dos principais conceitos relacionados a bancos de dados, incluindo modelagem, normalização e consultas SQL."
-          data="12/04/26"
-          hora="15:45"
-          tituloDocumento="Banco de Dados"
-        />
-
-        <CardHistorico
-          tituloHistorico="Pesquisa extensa"
-          conteudoHistorico="Este documento apresenta um estudo aprofundado sobre inteligência artificial, abordando desde conceitos básicos até aplicações avançadas em diferentes áreas como saúde, educação e indústria, destacando desafios e oportunidades futuras."
-          data="13/04/26"
-          hora="10:20"
-          tituloDocumento="Inteligência Artificial"
-        />
-
-        <CardHistorico
-          tituloHistorico="Material de apoio"
-          conteudoHistorico="Conteúdo utilizado como base para estudos, contendo exemplos práticos e exercícios para fixação do aprendizado."
-          data="14/04/26"
-          hora="17:00"
-          tituloDocumento="Algoritmos"
-        />
+                  {m.role === "assistant" && m.feedback && (
+                    <div className="histFeedback">
+                      Feedback:{" "}
+                      {m.feedback === "positive" ? "👍 positivo" : "👎 negativo"}
+                      {m.foi_reformulada && " · regenerada"}
+                    </div>
+                  )}
+                </div>
+              ))}
+          </>
+        )}
       </div>
     </div>
   );
