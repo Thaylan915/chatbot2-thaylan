@@ -65,7 +65,7 @@
 
 .estado.pendente {
   background-color: #919600;
-  color: #eeeeee;
+  color: #222831;
 }
 
 button.acao {
@@ -253,7 +253,7 @@ button.acao {
 
   border-radius: 12px;
 
-  color: #00adb5;
+  color: #4fd4dc;
 
   font-size: 14px;
   font-weight: 700;
@@ -282,7 +282,7 @@ button.acao {
 
   border-radius: 12px;
 
-  background: rgba(0, 173, 181, 0.08);
+  background: #1f333c;
 
   border: 1px solid rgba(0, 173, 181, 0.2);
 

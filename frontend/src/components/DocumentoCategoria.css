@@ -67,7 +67,7 @@
 
 .docCatBtnMeta {
   background-color: #00adb520;
-  color: #00adb5;
+  color: #4fd4dc;
   border: 1px solid #00adb540;
 }
 .docCatBtnMeta:hover {
@@ -76,7 +76,7 @@
 
 .docCatBtnAdmin {
   background-color: #7c6af720;
-  color: #a89ff7;
+  color: #c4bffb;
   border: 1px solid #7c6af740;
 }
 .docCatBtnAdmin:hover {
@@ -222,7 +222,7 @@
 .acaoSucesso {
   background: #00adb520;
   border: 1px solid #00adb550;
-  color: #00adb5;
+  color: #4fd4dc;
   border-radius: 10px;
   padding: 14px 18px;
   font-size: 14px;
@@ -252,7 +252,7 @@
 }
 
 .catBtnRegistrar {
-  background-color: #7c6af7;
+  background-color: #5f49d6;
   border: none;
   color: white;
   border-radius: 8px;

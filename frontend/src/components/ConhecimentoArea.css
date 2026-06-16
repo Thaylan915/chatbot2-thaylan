@@ -23,7 +23,7 @@
 
 .btnAdd {
   background-color: #00adb5;
-  color: #eeeeee;
+  color: #222831;
   border: none;
   border-radius: 22px;
   cursor: pointer;
@@ -367,7 +367,7 @@
   background-color: #00adb5;
   border: none;
   border-radius: 12px;
-  color: white;
+  color: #222831;
   font-size: 14px;
   font-weight: 600;
   cursor: pointer;
@@ -377,7 +377,7 @@
 }
 
 .btnFiltrar:hover {
-  background-color: #009da5;
+  background-color: #00b3bb;
   transform: translateY(-1px);
 }
 
@@ -508,7 +508,7 @@
   border-radius: 12px;
   background: rgba(0, 173, 181, 0.15);
   border: 1px solid rgba(0, 173, 181, 0.3);
-  color: #00adb5;
+  color: #4fd4dc;
   font-size: 14px;
   font-weight: 700;
   letter-spacing: 1px;
