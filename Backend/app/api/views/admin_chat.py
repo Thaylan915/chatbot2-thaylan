@@ -58,7 +58,7 @@ class AdminMetricsView(APIView):
         feedback_counts = respostas.aggregate(
             positivos=Count("id", filter=Q(feedback="positive")),
             negativos=Count("id", filter=Q(feedback="negative")),
-            avaliadas=Count("id", filter=Q(feedback__isnull=False)),
+            avaliadas=Count("id", filter=~Q(feedback="")),
         )
         positivos = feedback_counts["positivos"] or 0
         negativos = feedback_counts["negativos"] or 0

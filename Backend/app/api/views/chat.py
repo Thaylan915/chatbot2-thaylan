@@ -279,7 +279,7 @@ class MensagemFeedbackView(APIView):
             return Response({"error": "Mensagem não encontrada."}, status=status.HTTP_404_NOT_FOUND)
 
         if feedback is not None:
-            msg.feedback = feedback or None
+            msg.feedback = feedback or ""
         if nota is not None:
             try:
                 msg.nota = int(nota)

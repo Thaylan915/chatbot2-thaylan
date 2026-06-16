@@ -78,7 +78,7 @@ button.perfilInfo {
 
 .menuTop .item:first-child {
   background: linear-gradient(135deg, #00adb5, #00c8d2);
-  color: white;
+  color: #222831;
   font-weight: 600;
   margin-bottom: 6px;
 }
@@ -182,7 +182,7 @@ button.perfilInfo {
   height: 42px;
   border-radius: 50%;
   background: linear-gradient(135deg, #00adb5, #00d4ff);
-  color: white;
+  color: #222831;
   font-weight: bold;
   font-size: 16px;
   display: flex;
@@ -215,8 +215,8 @@ button.perfilInfo {
 }
 
 .btnLogout:hover {
-  background-color: #ff4d4d;
-  border-color: #ff4d4d;
+  background-color: #d83232;
+  border-color: #d83232;
   color: white;
 }
 
