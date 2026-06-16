@@ -643,7 +643,10 @@ class ResponderPergunta:
                 generation_config={
                     "temperature": 0.2,
                     "top_p": 0.9,
-                    "max_output_tokens": 2048,
+                    # O gemini-flash-latest (2.x) consome ~1200-1500 tokens de
+                    # "thinking" que contam neste limite; 2048 deixava pouco
+                    # espaço e truncava respostas longas no meio da frase.
+                    "max_output_tokens": 8192,
                 },
             ).text
             return texto, None

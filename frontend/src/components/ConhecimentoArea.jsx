@@ -254,9 +254,10 @@ export default function ConhecimentoArea() {
 
       <div className="filtrosBar">
         <div className="filtroGrupo">
-          <label>Categoria</label>
+          <label htmlFor="filtroCategoria">Categoria</label>
 
           <select
+            id="filtroCategoria"
             value={filtroTipo}
             onChange={(e) => setFiltroTipo(e.target.value)}
             className="filtroSelect"
@@ -269,10 +270,11 @@ export default function ConhecimentoArea() {
         </div>
 
         <div className="filtroGrupo">
-          <label>Período</label>
+          <label htmlFor="filtroPeriodoInicio">Período</label>
 
           <div className="periodoFiltro">
             <input
+              id="filtroPeriodoInicio"
               type="date"
               value={filtroDataInicio}
               onChange={(e) => setFiltroDataInicio(e.target.value)}
@@ -307,7 +309,7 @@ export default function ConhecimentoArea() {
         <div className="listaDocumentos">
           <div className="headerDoc">
             <h2>Documentos</h2>
-            <div style={{ display: "flex", gap: 8 }}>
+            <div className="headerDocAcoes">
               <button
                 className="btnReindexar"
                 onClick={() => carregar()}
@@ -315,7 +317,7 @@ export default function ConhecimentoArea() {
                 title="Recarregar lista"
               >
                 <img src={recarregar} alt="Recarregar" />
-                Recarregar
+                <span>Recarregar</span>
               </button>
               <button
                 className="btnReindexar"
@@ -324,16 +326,18 @@ export default function ConhecimentoArea() {
                 title="Reindexa todos os documentos da base"
               >
                 <img src={recarregar} alt="Reindexar todos" />
-                {reindexando ? "Reindexando…" : "Reindexar todos"}
+                <span>{reindexando ? "Reindexando…" : "Reindexar todos"}</span>
               </button>
             </div>
           </div>
 
           <div className="listaScroll">
-            {carregando && <p style={{ padding: 16 }}>Carregando...</p>}
-            {erro && <p style={{ padding: 16, color: "#c33" }}>Erro: {erro}</p>}
+            {carregando && <p className="conhMensagem">Carregando...</p>}
+            {erro && (
+              <p className="conhMensagem conhMensagemErro">Erro: {erro}</p>
+            )}
             {!carregando && !erro && documentos.length === 0 && (
-              <p style={{ padding: 16 }}>Nenhum documento encontrado.</p>
+              <p className="conhMensagem">Nenhum documento encontrado.</p>
             )}
             {documentos.map((d) => (
               <Documento
@@ -366,7 +370,7 @@ export default function ConhecimentoArea() {
             <h2>Novo Documento</h2>
 
             <label>
-              Nome
+              <span>Nome</span>
               <input
                 type="text"
                 placeholder="Digite o nome"
@@ -376,7 +380,7 @@ export default function ConhecimentoArea() {
             </label>
 
             <label>
-              Tipo do documento
+              <span>Tipo do documento</span>
               <div className="selectWrapper">
                 <select
                   className="modalSelect"
@@ -391,7 +395,7 @@ export default function ConhecimentoArea() {
             </label>
 
             <label>
-              Arquivo PDF
+              <span>Arquivo PDF</span>
               <label className="uploadArea">
                 <input
                   type="file"

@@ -148,12 +148,6 @@ export default function Sidebar({ refreshKey } = {}) {
                 className={`chatItem${ativo ? " ativo" : ""}`}
                 onClick={() => handleSelecionar(c.id)}
                 title={c.titulo}
-                style={{
-                  cursor: "pointer",
-                  backgroundColor: ativo
-                    ? "rgba(255,255,255,0.06)"
-                    : "transparent",
-                }}
               >
                 {c.titulo || `Chat ${formatarData(c.iniciada_em)}`}
               </button>

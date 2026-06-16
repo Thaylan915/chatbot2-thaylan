@@ -198,7 +198,7 @@ export default function Documento({
             <h2>Editar Documento</h2>
 
             <label>
-              Nome
+              <span>Nome</span>
               <input
                 type="text"
                 value={nomeEdit}
@@ -207,7 +207,7 @@ export default function Documento({
             </label>
 
             <label>
-              Tipo do documento
+              <span>Tipo do documento</span>
               <div className="selectWrapper">
                 <select
                   className="modalSelect"
@@ -224,7 +224,7 @@ export default function Documento({
             </label>
 
             <label>
-              Substituir arquivo PDF
+              <span>Substituir arquivo PDF</span>
               <label className="uploadArea">
                 <input
                   type="file"

@@ -93,6 +93,8 @@
   flex: 1;
   overflow-y: auto;
   min-height: 0;
+  scrollbar-width: thin;
+  scrollbar-color: #00c8d2 transparent;
 }
 
 .listaScroll::-webkit-scrollbar {
@@ -108,9 +110,17 @@
   background-color: transparent;
 }
 
-.listaScroll {
-  scrollbar-width: thin;
-  scrollbar-color: #00c8d2 transparent;
+.headerDocAcoes {
+  display: flex;
+  gap: 8px;
+}
+
+.conhMensagem {
+  padding: 16px;
+}
+
+.conhMensagemErro {
+  color: #cc3333;
 }
 
 .btnReindexar {
@@ -195,12 +205,6 @@
 }
 
 /* INPUTS */
-.modal label {
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-}
-
 .modal input,
 .modal textarea {
   padding: 10px;
@@ -349,125 +353,6 @@
   flex-shrink: 0;
 }
 
-/* ÁREA DOS BOTÕES */
-
-.filtroAcoes {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-left: auto;
-  flex-shrink: 0;
-}
-
-.btnFiltrar {
-  height: 46px;
-  padding: 0 24px;
-  background-color: #00adb5;
-  border: none;
-  border-radius: 12px;
-  color: white;
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.25s ease;
-  white-space: nowrap;
-}
-
-.btnFiltrar:hover {
-  background-color: #009da5;
-  color: #222831;
-  transform: translateY(-1px);
-}
-
-.btnLimpar {
-  height: 46px;
-  padding: 0 18px;
-  background: transparent;
-  border: 1px solid #555555;
-  border-radius: 12px;
-  color: #aaaaaa;
-  font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.25s ease;
-  white-space: nowrap;
-}
-
-.btnLimpar:hover {
-  color: #eeeeee;
-  border-color: #888888;
-  background-color: rgba(255, 255, 255, 0.05);
-}
-
-.filtrosBar {
-  display: flex;
-  align-items: flex-end;
-  gap: 16px;
-  flex-wrap: wrap;
-  margin: 0 20px 20px 20px;
-  padding: 18px 20px;
-  background-color: #222831;
-  border-radius: 22px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
-}
-
-.filtroGrupo {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  width: 220px;
-  min-width: 220px;
-  max-width: 220px;
-  flex: 0 0 220px;
-}
-
-.filtroGrupo label {
-  color: #aaaaaa;
-  font-size: 13px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-.filtroSelect,
-.filtroData {
-  width: 100%;
-  height: 46px;
-  padding: 0 14px;
-  background-color: #393e46;
-  border: 1px solid #4a4f58;
-  border-radius: 12px;
-  color: #eeeeee;
-  font-size: 14px;
-  transition: all 0.25s ease;
-  box-sizing: border-box;
-}
-
-.filtroSelect:hover,
-.filtroData:hover {
-  border-color: #00adb5;
-}
-
-.filtroSelect:focus,
-.filtroData:focus {
-  outline: none;
-  border-color: #00adb5;
-  box-shadow: 0 0 0 3px rgba(0, 173, 181, 0.15);
-}
-
-.periodoFiltro {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.periodoFiltro span {
-  color: #888888;
-  font-size: 14px;
-  font-weight: 500;
-  flex-shrink: 0;
-}
-
 .filtroAcoes {
   display: flex;
   align-items: center;
@@ -513,7 +398,7 @@
 .btnLimpar:hover {
   color: #eeeeee;
   border-color: #888888;
-  background-color: rgba(255, 255, 255, 0.05);
+  background-color: #2d333b;
 }
 
 @media (max-width: 900px) {

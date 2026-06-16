@@ -7,6 +7,54 @@ import enviarIcon from "../assets/images/enviar.svg";
 import api from "../services/api.jsx";
 import { authService } from "../services/authService";
 
+function baixarBlob(blob, nomeArquivo) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = nomeArquivo;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
+
+// ── Renderers de markdown (fora do componente para não recriar a cada render) ──
+function MdParagrafo({ children }) {
+  return <p className="markdownParagrafo">{children}</p>;
+}
+function MdLista({ children }) {
+  return <ul className="markdownLista">{children}</ul>;
+}
+function MdListaOrdenada({ children }) {
+  return <ol className="markdownLista">{children}</ol>;
+}
+function MdItem({ children }) {
+  return <li className="markdownItem">{children}</li>;
+}
+function MdNegrito({ children }) {
+  return <strong className="markdownNegrito">{children}</strong>;
+}
+function MdCitacao({ children }) {
+  return <blockquote className="markdownCitacao">{children}</blockquote>;
+}
+
+const mdNodePropTypes = { children: PropTypes.node };
+MdParagrafo.propTypes = mdNodePropTypes;
+MdLista.propTypes = mdNodePropTypes;
+MdListaOrdenada.propTypes = mdNodePropTypes;
+MdItem.propTypes = mdNodePropTypes;
+MdNegrito.propTypes = mdNodePropTypes;
+MdCitacao.propTypes = mdNodePropTypes;
+
+const MARKDOWN_COMPONENTS = {
+  p: MdParagrafo,
+  ul: MdLista,
+  ol: MdListaOrdenada,
+  li: MdItem,
+  strong: MdNegrito,
+  blockquote: MdCitacao,
+};
+
 export default function ChatArea() {
   const [mensagens, setMensagens]   = useState([]);
   const [input, setInput]           = useState("");
@@ -206,17 +254,6 @@ export default function ChatArea() {
     return "";
   }
 
-  function baixarBlob(blob, nomeArquivo) {
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = nomeArquivo;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    URL.revokeObjectURL(url);
-  }
-
   function exportarRespostaTxt(index, msg) {
     const pergunta = perguntaAnteriorA(index);
     const data = new Date().toLocaleString("pt-BR");
@@ -379,16 +416,7 @@ export default function ChatArea() {
                   <div className="textoBolha">
                     {msg.role === "assistant" ? (
                       <div className="markdownResposta">
-                        <ReactMarkdown
-                          components={{
-                            p: ({ children }) => <p className="markdownParagrafo">{children}</p>,
-                            ul: ({ children }) => <ul className="markdownLista">{children}</ul>,
-                            ol: ({ children }) => <ol className="markdownLista">{children}</ol>,
-                            li: ({ children }) => <li className="markdownItem">{children}</li>,
-                            strong: ({ children }) => <strong className="markdownNegrito">{children}</strong>,
-                            blockquote: ({ children }) => <blockquote className="markdownCitacao">{children}</blockquote>,
-                          }}
-                        >
+                        <ReactMarkdown components={MARKDOWN_COMPONENTS}>
                           {msg.conteudo || ""}
                         </ReactMarkdown>
                       </div>
