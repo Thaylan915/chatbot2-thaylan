@@ -31,6 +31,7 @@ INSTALLED_APPS = [
     "rest_framework_simplejwt",
     "Backend.app",
     "Backend.app.documents",
+    "drf_spectacular", 
 ]
 
 MIDDLEWARE = [
@@ -79,6 +80,15 @@ REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": (
         "rest_framework_simplejwt.authentication.JWTAuthentication",
     ),
+     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
+}
+
+# Configurações do Swagger
+SPECTACULAR_SETTINGS = {
+    "TITLE": "Chatbot IFES — API",
+    "DESCRIPTION": "API do sistema de chatbot RAG para o IFES.",
+    "VERSION": "1.0.0",
+    "SERVE_INCLUDE_SCHEMA": False,
 }
 
 from datetime import timedelta
